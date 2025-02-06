@@ -7,7 +7,6 @@
 ## Load packages
 library(crabpack)
 library(tidyverse)
-library(ggridges)
 
 
 ## Pull Tanner specimen data
@@ -34,10 +33,8 @@ mat_size <- get_male_maturity(species = "TANNER",
 ## Assign maturity to specimen data
 tanner$specimen <- tanner$specimen %>% 
                    left_join(., mat_size) %>%
-                   mutate(CATEGORY = case_when(SEX == 1 & SIZE >= SAM ~ "mature_male",
-                                               SEX == 1 & SIZE< SAM ~ "immature_male",
-                                               SEX == 2 & CLUTCH_SIZE >= 1 ~ "mature_female",
-                                               SEX == 2 & CLUTCH_SIZE == 0 ~ "immature_female",
+                   mutate(CATEGORY = case_when((SEX == 1 & SIZE >= SAM) | (SEX == 2 & CLUTCH_SIZE >= 1) ~ "mature",
+                                               (SEX == 1 & SIZE< SAM) | (SEX == 2 & CLUTCH_SIZE == 0) ~ "immature",
                                                TRUE ~ NA)) 
 
 ## Subset specimen by maturity and disease status
@@ -45,20 +42,20 @@ tanner$specimen <- tanner$specimen %>%
 tanner_mat_bcs <- tanner
 tanner_mat_bcs$specimen <- tanner_mat_bcs$specimen %>%
                            filter(DISEASE_CODE == 2, 
-                                  CATEGORY %in% c("mature_female", "mature_male")) 
+                                  CATEGORY == "mature")
 # immature, with BCS
 tanner_imm_bcs <- tanner
 tanner_imm_bcs$specimen <- tanner_imm_bcs$specimen %>%
                            filter(DISEASE_CODE == 2, 
-                                  CATEGORY %in% c("immature_female", "immature_male"))
+                                  CATEGORY == "immature")
 # mature, all
 tanner_mat <- tanner
 tanner_mat$specimen <- tanner_mat$specimen %>%
-                       filter(CATEGORY %in% c("mature_female", "mature_male")) 
+                       filter(CATEGORY == "mature") 
 # immature, all
 tanner_imm <- tanner
 tanner_imm$specimen <- tanner_imm$specimen %>%
-                       filter(CATEGORY %in% c("immature_female", "immature_male"))
+                       filter(CATEGORY == "immature")
 # all BCS
 tanner_bcs <- tanner
 tanner_bcs$specimen <- tanner_bcs$specimen %>%
@@ -70,12 +67,10 @@ all <- calc_bioabund(crab_data = tanner,
                      species = "TANNER",
                      spatial_level = "region") %>%
        mutate(CATEGORY = "pop")
-
 all_bcs <- calc_bioabund(crab_data = tanner_bcs,
                          species = "TANNER",
                          spatial_level = "region") %>%
            mutate(CATEGORY = "pop_bcs")
-
 mat_bcs <- calc_bioabund(crab_data = tanner_mat_bcs,
                          species = "TANNER",
                          spatial_level = "region") %>%
@@ -95,7 +90,7 @@ imm <- calc_bioabund(crab_data = tanner_imm,
 
 
 ## Combine abundance estimates, calculate percent prevalence
-abund <- rbind(all, all_bcs, mat_bcs, imm_bcs, mat, imm) %>%
+abund2 <- rbind(all, all_bcs, mat_bcs, imm_bcs, mat, imm) %>%
          select(-c("ABUNDANCE_CV","ABUNDANCE_CI", 
                    "BIOMASS_MT", "BIOMASS_MT_CV", "BIOMASS_MT_CI", 
                    "BIOMASS_LBS", "BIOMASS_LBS_CV", "BIOMASS_LBS_CI")) %>%
