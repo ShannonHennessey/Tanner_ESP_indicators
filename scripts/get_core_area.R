@@ -3,19 +3,12 @@
 ## NOTES:
 ## - include corner stations in the quantile estimation or not??
 ##   there might be some spatial considerations, because not on even grid...
+## - should core area be a yearly metric? (ie. time-varying??)
 
 
+## Read in setup
+source("./scripts/setup.R")
 
-## Load packages
-library(crabpack)
-library(tidyverse)
-library(sf)
-library(rnaturalearth)
-
-
-## Pull Tanner specimen data
-tanner <- get_specimen_data(species = "TANNER",
-                            region = "EBS")
 
 ## Calculate station-level CPUE
 cpue <- crabpack::calc_cpue(crab_data = tanner,
@@ -23,18 +16,9 @@ cpue <- crabpack::calc_cpue(crab_data = tanner,
                             years = c(1988:2024))
 
 
-# Read in station general definitions, grid cell centroid
-stations <- read.csv("Y:/KOD_Survey/EBS Shelf/Data_Processing/Data/lookup_tables/station_lookup.csv")
-
-# Define corner stations
-corners <- stations %>% 
-           filter(STATION_TYPE == "MTCA_CORNER") %>%
-           pull(STATION_ID)
- 
-
-# Identify stations in 50-100 CPUE percentile range
+## Identify stations in 50-100 CPUE percentile range
 cpue50_core <- cpue %>%
-               # filter(!STATION_ID %in% corners) %>% # remove corner stations
+               filter(!STATION_ID %in% corners) %>% # remove corner stations
                group_by(STATION_ID) %>%
                summarise(MEAN_CPUE = mean(CPUE)) %>%
                mutate(QUANTILE = ifelse(MEAN_CPUE > quantile(MEAN_CPUE, 0.50), 1, 0)) %>%
@@ -55,10 +39,10 @@ ggsave("./figures/tanner_core_area.png", height = 6, width = 10)
 
 
 ## Write .csv for stations in 50th percentile of avg CPUE  
-write.csv(cpue50_core %>% 
-            filter(MEAN_CPUE > quantile(MEAN_CPUE, 0.50)) %>%
-            select(-QUANTILE), 
-          "./outputs/tanner_area_cpue50.csv", row.names = FALSE)
+cpue50_core %>% 
+  filter(MEAN_CPUE > quantile(MEAN_CPUE, 0.50)) %>%
+  select(-QUANTILE) %>%
+  write.csv("./outputs/tanner_area_cpue50.csv", row.names = FALSE)
 
 
 
