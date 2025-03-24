@@ -1,0 +1,11 @@
+﻿Indicator,AKFIN Indicator Name,Indicator Unit,Relationship with Stock
+Benthic Invertebrate Density,Summer_Benthic_Invertebrate_Density_SEBS_Tanner_Survey ,kg/km²,positive
+Cold Pool Extent ,Summer_Cold_Pool_SEBS_Tanner_Survey ,nmi²,negative
+Mature Male Tanner Crab Area Occupied,Summer_Tanner_Male_Area_Occupied_SEBS_Survey,nmi²,positive
+Immature Tanner Crab Disease Prevalance ,Summer_Tanner_Juvenile_Disease_Prevalence,%,negative
+Mature Male Tanner Crab Center of Abundance,Summer_Tanner_Male_Center_Distribution_SEBS_Survey,°Longitude,negative
+Immature Tanner Crab Temperature Occupied,Summer_Tanner_Juvenile_Temperature_Occupancy,°C,positive
+Male Tanner Crab Size at 50% Probability of Terminal Molt,Annual_Tanner_Size_Terminal_Molt_Model,millimeters,positive
+Summer Bottom Temperature,Summer_Temperature_Bottom_Tanner_Survey,°C,positive
+Chlorophyll-a Concentration,AMJ_Chlorophylla_Biomass_Tanner_Satellite,µg/L,positive
+Pacific Cod Density,Summer_Pacific_Cod_Density_Tanner_Survey,kg/km²,negative
