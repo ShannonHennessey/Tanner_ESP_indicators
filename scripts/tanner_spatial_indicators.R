@@ -2,21 +2,18 @@
 ##          by size/sex category, and (b) Area Occupied (D95) - area of stations 
 ##          that make up 95% of the cumulative Tanner cpue
 ##
-## Author: Shannon Hennessey; adapted from Erin Fedewa's snow crab indicaator
+## Author: Shannon Hennessey; adapted from Erin Fedewa's snow crab indicator
 ##
 ## NOTES:
-## - assign male maturity by actual proportion in a given size bin, not juse a cutline?
+## - assign male maturity by actual proportion in a given size bin, not just a cutline?
 ##   ...although harder to implement for years with no cutline...
+##   ...but could do a global cutline for missing years? (ie fit model to all crab/all years?)
 ## - need to figure out what to do when missing stations in a year (see notes below for D95)
 
-## Load packages
-library(crabpack)
-library(tidyverse)
 
+## Read in setup
+source("./scripts/setup.R")
 
-## Pull Tanner specimen data
-tanner <- get_specimen_data(species = "TANNER",
-                            region = "EBS")
 
 ## Pull size at 50% probability of terminal molt
 # Assign static mean cutline to missing years:
@@ -58,19 +55,16 @@ cpue <- tanner$specimen %>%
 
 
 ## Compute Tanner crab center of abundance by size/sex
-# Define corner stations
-corner <- c("GF1918", "GF2019", "GF2120", "GF2221",
-            "HG1918", "HG2019", "HG2120", "HG2221",
-            "IH1918", "IH2019", "IH2120", "IH2221",
-            "JI1918", "JI2019", "JI2120", "JI2221",
-            "ON2524", "ON2625",
-            "PO2423", "PO2524", "PO2625", "PO2726",
-            "QP2423", "QP2524", "QP2625", "QP2726")
-n_haul <- tanner_haul %>% group_by(YEAR) %>% filter(!STATION_ID %in% corner) %>% summarise(N_STATION = n())
+# Look at # of standard hauls by year
+n_haul <- tanner$haul %>% 
+          group_by(YEAR) %>% 
+          filter(!STATION_ID %in% corners) %>% 
+          summarise(N_STATION = n())
 
 
+# Calculate center of abundance
 COD <- cpue %>%
-       filter(!STATION_ID %in% corner) %>% # exclude corner stations
+       filter(!STATION_ID %in% corners) %>% # exclude corner stations
        group_by(YEAR, CATEGORY) %>%
        summarise(LAT_COD = weighted.mean(LATITUDE, w = CPUE),
                  LON_COD = weighted.mean(LONGITUDE, w = CPUE)) %>%
@@ -84,7 +78,7 @@ lat_cod <- ggplot(data = COD %>% filter(CATEGORY != "population"),
                   aes(x = YEAR, y = LAT_COD, group = CATEGORY, color = CATEGORY)) +
            geom_point() +
            geom_line() +
-           labs(x = "", y = expression(paste("Center of Abundance (", degree, "Latitude)"))) +           
+           labs(x = "Year", y = expression(paste("Center of Abundance (", degree, "Latitude)"))) +           
            theme_bw() +
            theme(legend.title = element_blank()) 
 
@@ -97,7 +91,7 @@ lon_cod <- ggplot(data = COD %>% filter(CATEGORY != "population"),
                   aes(x = YEAR, y = LON_COD, group = CATEGORY, color = CATEGORY)) +
            geom_point() +
            geom_line() +
-           labs(x = "", y = expression(paste("Center of Abundance (", degree, "Longitude)"))) +           
+           labs(x = "Year", y = expression(paste("Center of Abundance (", degree, "Longitude)"))) +           
            theme_bw() +
            theme(legend.title = element_blank()) 
 
@@ -134,7 +128,7 @@ f_d95_est <- function(x){
 
 # Estimate d95
 d95 <- cpue %>%
-       filter(!STATION_ID %in% corner) %>% # exclude corner stations
+       filter(!STATION_ID %in% corners) %>% # exclude corner stations
        nest(data = c(-YEAR, -CATEGORY)) %>%
        mutate(d95 = purrr::map_dbl(data, f_d95_est)) %>% #apply d95 function to each element 
        unnest(cols = c(data)) %>%
@@ -150,12 +144,13 @@ d95_plot <- ggplot(data = d95 %>% filter(CATEGORY != "population"),
                    aes(x = YEAR, y = d95, group = CATEGORY, color = CATEGORY)) +
             geom_point() +
             geom_line() +
-            labs(x = "", y = expression("Area Occupied ("~nmi^2~")")) +
+            labs(x = "Year", y = expression("Area Occupied ("~nmi^2~")")) +
             theme_bw() +
             theme(legend.title = element_blank()) 
 
 ggsave("./figures/tanner_area_occupied.png", d95_plot,
        height = 6, width = 10)
+
 
 # Write output for D95 indicator     
 d95 %>%
@@ -165,7 +160,7 @@ d95 %>%
 
 
 
-## Plot d95 vs. abund
+# Plot d95 vs. abund
 d95_v_abund_plot <- ggplot(data = d95 %>% filter(CATEGORY != "population"), 
                           aes(x = CPUE, y = d95, group = CATEGORY, color = CATEGORY)) +
                    geom_point() +
