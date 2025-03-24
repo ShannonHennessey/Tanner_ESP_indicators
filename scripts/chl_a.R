@@ -23,7 +23,7 @@ ext <- bsierp %>%
 
 # ## Download data
 # for(i in years){
-#   file_name <- paste0("./data/nc/occ8_", i ,".nc")
+#   file_name <- paste0(data_dir, "nc/occ8_", i ,".nc")
 #   download.file(url = paste0("https://coastwatch.pfeg.noaa.gov/erddap/griddap/pmlEsaCCI60OceanColor8Day.nc?chlor_a%5B(",
 #                              i,"-04-01T00:00:00Z):(", i,"-07-31T00:00:00Z)%5D%5B(",ext[2],"):(",ext[4],")%5D%5B(",ext[1],
 #                              "):(",ext[3],")%5D&.draw=surface&.vars=longitude%7Clatitude%7Cchlor_a&.colorBar=%7C%7C%7C%7C%7C&.bgColor=0xffccccff"),
@@ -48,7 +48,7 @@ tidy_chl <- function(file) {
 datalist = list()
 
 for(i in years){
-  dat <- tidy_chl(paste0("./data/nc/occ8_", i ,".nc"))
+  dat <- tidy_chl(paste0(data_dir, "nc/occ8_", i ,".nc"))
   datalist[[i]] <- dat 
 }
 
@@ -56,7 +56,7 @@ for(i in years){
 occ <- dplyr::bind_rows(datalist)
 
 # from https://github.com/MattCallahan-NOAA/chla-indicator-comparison/blob/main/chla-indicator-comparison-data.RMD
-occ_grid <- readRDS("./data/occ_chl_spatial_lookup.RDS")
+occ_grid <- readRDS(paste0(data_dir, "occ_chl_spatial_lookup.RDS"))
 occ_esp <- occ %>%
            inner_join(occ_grid, by = c("longc" = "longitude", "latc" = "latitude"))
 
