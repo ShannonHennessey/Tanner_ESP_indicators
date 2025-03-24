@@ -13,6 +13,8 @@ library(akgfmaps)
 library(rnaturalearth) 
 
 
+## Set data directory
+data_dir <- "Y:/KOD_Research/Hennessey/Tanner_ESP/data/"
 ## Set years
 current_year <- 2024
 years <- 1998:current_year
