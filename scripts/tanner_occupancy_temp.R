@@ -2,16 +2,13 @@
 ##
 ## NOTES:
 ## - need to impute missing station temperatures for early years 
+## - do we think there's a behavioral shift with maturity?? Or is it more size stratified?
+##   - could see the argument for maturity bc mating overlaps etc...but size-dependent predation...temp differences?
 
 
-## Load packages
-library(crabpack)
-library(tidyverse)
+## Read in setup
+source("./scripts/setup.R")
 
-
-## Pull Tanner specimen data
-tanner <- get_specimen_data(species = "TANNER",
-                            region = "EBS")
 
 ## Pull size at 50% probability of terminal molt
 # Assign static mean cutline to missing years:
