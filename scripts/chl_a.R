@@ -8,14 +8,6 @@
 ## - eventually add in peak bloom timing -- some sort of DFA/combined indicator?
 
 
-# ## Load packages
-# library(tidync)
-# library(tidyverse)
-# library(lubridate)
-# library(sf)
-# library(httr)
-# library(akgfmaps)
-
 ## Read in setup
 source("./scripts/setup.R")
 
@@ -26,14 +18,10 @@ bsierp <- akgfmaps::get_bsierp_regions(set.crs = 4326)
 ext <- bsierp %>%
        filter(BSIERP_ID %in% c(3,4,5,6,8)) %>%
        st_bbox()
-# ext <- c(-178.9699821, 54.8314987, -159.189982, 61.9200013)
  
 
 
-## Download data
-# current_year <- 2024
-# years <- 1998:current_year
-
+# ## Download data
 # for(i in years){
 #   file_name <- paste0("./data/nc/occ8_", i ,".nc")
 #   download.file(url = paste0("https://coastwatch.pfeg.noaa.gov/erddap/griddap/pmlEsaCCI60OceanColor8Day.nc?chlor_a%5B(",
@@ -77,19 +65,15 @@ occ_esp <- occ %>%
 occ_esp %>%
   filter(BSIERP_ID %in% c(3, 4, 5, 6, 8),
          month %in% c(4:7)) %>%
-  group_by(BSIERP_ID, year) %>%
-  # group_by(date, year) %>%
-  # summarize(mean_chla = mean(chlorophyll, na.rm = T)) %>%
-  # group_by(year) %>%
+  group_by(year) %>%
   summarize(mean_chla = mean(chlorophyll, na.rm = T)) %>%
   ggplot() +
   geom_line(aes(x = year, y = mean_chla)) +
-  labs(x = "Year", y = "Mean Chlorophyll-a") +
-  facet_wrap(~BSIERP_ID) +
+  geom_point(aes(x = year, y = mean_chla)) +
+  labs(x = "Year", y = "Mean Chlorophyll-a Concentration (µg/L)") +
   xlim(1988, 2024) +
   theme_bw() 
-
-ggsave("BSIERP_OCCCI_AMJJ.PNG")
+ggsave("./figures/BSIERP_OCCCI_AMJJ.png")
 
 
 
