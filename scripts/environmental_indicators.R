@@ -84,7 +84,9 @@ ggsave("./figures/surface_temp.png")
 
 
 ## Combine indices and save output
-full_join(mean_bt, cp_extent, mean_st) %>%
+full_join(mean_bt, cp_extent) %>%
+  full_join(., mean_st) %>%
+  arrange(YEAR) %>%
   write_csv("./outputs/temp_coldpool.csv")
 
 
