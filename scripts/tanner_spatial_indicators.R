@@ -1,6 +1,7 @@
-## Purpose: To calculate (a) Tanner Crab center of abundance (lat & lon) in EBS 
-##          by size/sex category, and (b) Area Occupied (D95) - area of stations 
-##          that make up 95% of the cumulative Tanner cpue
+## Purpose: To calculate (1) Tanner Crab center of abundance (lat & lon) in EBS 
+##          by size/sex category, (2) Area Occupied (D95) - area of stations 
+##          that make up 95% of the cumulative Tanner CPUE, and (3) the fraction 
+##          of Tanner Crab stock (abundance) in Bristol Bay 
 ##
 ## Author: Shannon Hennessey; adapted from Erin Fedewa's snow crab indicator
 ##
@@ -9,6 +10,10 @@
 ##   ...although harder to implement for years with no cutline...
 ##   ...but could do a global cutline for missing years? (ie fit model to all crab/all years?)
 ## - need to figure out what to do when missing stations in a year (see notes below for D95)
+## - fraction BB: 
+##    - total EBS, or just E166??
+##    - not sure how to do stratification...can I just do station-level CPUE fraction?
+##    - BB management district vs. BB proper?
 
 
 ## Read in setup
@@ -23,7 +28,7 @@ mat_size <- get_male_maturity(species = "TANNER",
             select(-c("A_EST", "A_SE")) %>%
             rename(MAT_SIZE = B_EST, 
                    STD_ERR = B_SE) %>%
-            right_join(., expand_grid(YEAR = c(1975:2024),
+            right_join(., expand_grid(YEAR = years,
                                       SPECIES = "TANNER", 
                                       REGION = "EBS",
                                       DISTRICT = c("ALL", "E166", "W166"))) %>%
@@ -40,7 +45,7 @@ cpue <- tanner$specimen %>%
                                     (SEX == 2 & CLUTCH_SIZE >= 1) ~ "mature_female",
                                     (SEX == 2 & CLUTCH_SIZE == 0) ~ "immature_female",
                                     TRUE ~ NA)) %>%
-        filter(YEAR >= 1988,
+        filter(YEAR %in% years,
                !is.na(CATEGORY)) %>%
         group_by(YEAR, STATION_ID, LATITUDE, LONGITUDE, AREA_SWEPT, CATEGORY) %>%
         summarise(COUNT = round(sum(SAMPLING_FACTOR))) %>%
@@ -54,7 +59,7 @@ cpue <- tanner$specimen %>%
 
 
 
-## Compute Tanner crab center of abundance by size/sex
+## Compute Tanner crab center of abundance by size/sex -------------------------
 # Look at # of standard hauls by year
 n_haul <- tanner$haul %>% 
           group_by(YEAR) %>% 
@@ -68,7 +73,7 @@ COD <- cpue %>%
        group_by(YEAR, CATEGORY) %>%
        summarise(LAT_COD = weighted.mean(LATITUDE, w = CPUE),
                  LON_COD = weighted.mean(LONGITUDE, w = CPUE)) %>%
-       right_join(., expand_grid(YEAR = c(1989:2024),
+       right_join(., expand_grid(YEAR = years,
                                  CATEGORY = unique(cpue$CATEGORY))) %>%
        arrange(YEAR)
 
@@ -107,7 +112,7 @@ COD %>%
 
 
 
-## Compute D95 by each size and sex category 
+## Compute D95 by each size and sex category -----------------------------------
 # i.e. the number of stations contributing to 95% of cumulative CPUE
 # calc from standardized timeseries (1989+)
 # *note that 1992 is problematic given missing station
@@ -135,7 +140,7 @@ d95 <- cpue %>%
        group_by(YEAR, CATEGORY) %>%
        summarise(CPUE = sum(COUNT) / sum(AREA_SWEPT), # add a column for total cpue of each group in each year
                  d95 = mean(d95)) %>% # take 'mean' just to get one value (they are all the same)
-       right_join(., expand_grid(YEAR = c(1989:2024),
+       right_join(., expand_grid(YEAR = years,
                                  CATEGORY = unique(cpue$CATEGORY))) %>%
        arrange(YEAR)
 
@@ -173,5 +178,58 @@ d95_v_abund_plot <- ggplot(data = d95 %>% filter(CATEGORY != "population"),
 
 ggsave("./figures/tanner_area_v_abund.png", d95_v_abund_plot,
        height = 6, width = 10)
+
+
+
+## Calculate the fraction of Tanner stock in Bristol Bay -----------------------
+# set Bristol Bay stations (136)
+BB <- c("A-02","A-03","A-04","A-05","A-06","B-01","B-02","B-03","B-04","B-05","B-06",
+        "B-07","B-08","C-01","C-02","C-03","C-04","C-05","C-06","C-07","C-08","C-09","D-01",
+        "D-02","D-03","D-04","D-05","D-06","D-07","D-08","D-09","D-10","E-01","E-02","E-03",
+        "E-04","E-05","E-06","E-07","E-08","E-09","E-10","E-11","E-12","F-01","F-02","F-03",
+        "F-04","F-05","F-06","F-07","F-08","F-09","F-10","F-11","F-12","F-13","F-14","G-01",
+        "G-02","G-03","G-04","G-05","G-06","G-07","G-08","G-09","G-10","G-11","G-12","G-13",
+        "G-14","G-15","H-01","H-02","H-03","H-04","H-05","H-06","H-07","H-08","H-09","H-10",
+        "H-11","H-12","H-13","H-14","H-15","H-16","I-01","I-02","I-03","I-04","I-05","I-06",
+        "I-07","I-08","I-09","I-10","I-11","I-12","I-13","I-14","I-15","I-16","J-01","J-02",
+        "J-03","J-04","J-05","J-06","J-07","J-08","J-09","J-10","J-11","J-12","J-13","J-14",
+        "J-15","J-16","K-01","K-02","K-03","K-04","K-05","K-06","K-07","K-08","K-09","K-10",
+        "K-11","K-12","K-13","K-14","Z-05")
+
+## Calculate station-level CPUE for legal males
+cpue_bb <- calc_cpue(crab_data = tanner,
+                     species = "TANNER",
+                     region = "EBS", 
+                     years = years,
+                     crab_category = "legal_male") %>%
+          # assign stations to Bristol Bay
+          mutate(STRATUM2 = ifelse(STATION_ID %in% BB, "BB", "NOT_BB")) %>%
+          # remove corner stations
+          filter(!STATION_ID %in% corners) %>%
+          group_by(YEAR, STRATUM2) %>%
+          summarise(CPUE = sum(CPUE)) %>%
+          pivot_wider(names_from = STRATUM2, values_from = CPUE) %>%
+          mutate(fraction_BB = BB/(BB + NOT_BB)) %>%
+          right_join(., expand.grid(YEAR = years)) %>%
+          arrange(YEAR)
+
+
+# Plot
+cpue_bb %>%
+  ggplot(aes(x = YEAR, y = fraction_BB)) +
+  geom_point() +
+  geom_line() +
+  labs(x = "Year", y = "Fraction of Tanner Crab Stock in Bristol Bay") +
+  geom_hline(aes(yintercept = mean(fraction_BB, na.rm = TRUE)), linetype = 5) +
+  xlim(min(years), max(years)) +
+  theme_bw()
+ggsave("./figures/fraction_bb.png")
+
+
+## Save output
+cpue_bb %>%
+  select(YEAR, fraction_BB) %>%
+  write_csv("./outputs/fraction_bb.csv")
+
 
 
