@@ -70,13 +70,20 @@ occ_esp %>%
   ggplot() +
   geom_line(aes(x = year, y = mean_chla)) +
   geom_point(aes(x = year, y = mean_chla)) +
+  geom_hline(aes(yintercept = mean(mean_chla, na.rm = TRUE)), linetype = 5) +
   labs(x = "Year", y = "Mean Chlorophyll-a Concentration (µg/L)") +
-  xlim(1988, 2024) +
+  xlim(min(years), max(years)) +
   theme_bw() 
-ggsave("./figures/BSIERP_OCCCI_AMJJ.png")
+ggsave("./figures/chla_concentration.png")
 
 
 
-
+## Save indicator output
+occ_esp %>%
+  filter(BSIERP_ID %in% c(3, 4, 5, 6, 8),
+         month %in% c(4:7)) %>%
+  group_by(year) %>%
+  summarize(mean_chla = mean(chlorophyll, na.rm = T)) %>%
+  write_csv("./outputs/chla_concentration.csv")
 
 
