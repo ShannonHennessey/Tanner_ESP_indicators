@@ -60,18 +60,20 @@ temp_occ <- cpue %>%
             group_by(YEAR) %>%
             mutate(MEAN_BT = mean(GEAR_TEMPERATURE, na.rm = T)) %>%
             ungroup() %>%
+            # subset to just immature
+            filter(CATEGORY %in% c("immature_male", "immature_female")) %>%
             # calculate mean bottom temperature weighted by CPUE
-            group_by(YEAR, CATEGORY, MEAN_BT) %>%
+            group_by(YEAR, MEAN_BT) %>% # CATEGORY
             summarise(TEMP_OCC = weighted.mean(GEAR_TEMPERATURE, w = CPUE, na.rm = T)) %>%
-            right_join(., expand_grid(YEAR = years,
-                                      CATEGORY = unique(cpue$CATEGORY))) %>%
-            arrange(YEAR)
+            right_join(., expand_grid(YEAR = years)) %>%
+            arrange(YEAR) #%>%
+            # mutate(DIFF = TEMP_OCC - MEAN_BT) # generally at warmer temps than mean bottom temp
             
   
 
 ## Plot
 temp_plot <- ggplot(data = temp_occ %>% filter(CATEGORY != "population"),
-                    aes(x = YEAR, y = TEMP_OCC, group= CATEGORY, color = CATEGORY)) +
+                    aes(x = YEAR, y = TEMP_OCC, group = CATEGORY, color = CATEGORY)) +
              geom_point(size = 3) +
              geom_line() +
              geom_hline(aes(yintercept = mean(TEMP_OCC, na.rm = TRUE)), linetype = 5) +
@@ -85,7 +87,7 @@ ggsave("./figures/tanner_temp_occupied.png", temp_plot,
 ## Write output for Temp Occupancy indicator     
 temp_occ %>%
   select(-MEAN_BT) %>%
-  pivot_wider(names_from = "CATEGORY", values_from = "TEMP_OCC") %>%
+  # pivot_wider(names_from = "CATEGORY", values_from = "TEMP_OCC") %>%
   write.csv("./outputs/tanner_temp_occupied.csv", row.names = FALSE)
 
 
