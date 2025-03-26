@@ -18,7 +18,7 @@ mat_size <- get_male_maturity(species = "TANNER",
             select(-c("A_EST", "A_SE")) %>%
             rename(MAT_SIZE = B_EST, 
                    STD_ERR = B_SE) %>%
-            right_join(., expand_grid(YEAR = c(1975:2024),
+            right_join(., expand_grid(YEAR = years,
                                       SPECIES = "TANNER", 
                                       REGION = "EBS",
                                       DISTRICT = c("ALL", "E166", "W166"))) %>%
@@ -37,7 +37,7 @@ cpue <- tanner$specimen %>%
                                     (SEX == 2 & CLUTCH_SIZE >= 1) ~ "mature_female",
                                     (SEX == 2 & CLUTCH_SIZE == 0) ~ "immature_female",
                                     TRUE ~ NA)) %>%
-        filter(YEAR >= 1988,
+        filter(YEAR %in% years,
                !is.na(CATEGORY)) %>%
         group_by(YEAR, STATION_ID, LATITUDE, LONGITUDE, AREA_SWEPT, CATEGORY) %>%
         summarise(COUNT = round(sum(SAMPLING_FACTOR))) %>%
@@ -63,7 +63,7 @@ temp_occ <- cpue %>%
             # calculate mean bottom temperature weighted by CPUE
             group_by(YEAR, CATEGORY, MEAN_BT) %>%
             summarise(TEMP_OCC = weighted.mean(GEAR_TEMPERATURE, w = CPUE, na.rm = T)) %>%
-            right_join(., expand_grid(YEAR = c(1989:2024),
+            right_join(., expand_grid(YEAR = years,
                                       CATEGORY = unique(cpue$CATEGORY))) %>%
             arrange(YEAR)
             
