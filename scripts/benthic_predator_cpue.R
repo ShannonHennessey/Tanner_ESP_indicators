@@ -2,9 +2,10 @@
 ##          in core tanner habitat
 ##
 ## NOTES:
-## - predator biomass vs. abundance??
-## - also, for pcod, lg vs. small individuals??
 ## - revise these to a spatial overlap metric?
+## - predator biomass vs. abundance??
+## - SIZE CUTOFF - crab and preds (maturity probably doesn't matter....)
+## - try to refine suite of predators....
 
 
 ## Load packages
@@ -18,6 +19,11 @@ library(stars)
 library(sf)
 library(terra)
 library(ENMTools)
+
+
+## Read in setup
+source("./scripts/setup.R")
+
 
 ## Function to calculate Hellinger's distance
 norm_vec <- function(x) sqrt(sum(x^2))
@@ -33,13 +39,10 @@ hell_dist <- function (p, q, from, to, n = 1024) {
   hd
 }
 
-## Read in data
-# Tanner specimen data
-tanner <- get_specimen_data(species = "TANNER",
-                            region = "EBS")
 
-# Groundfish data queried from Oracle -- from "get_gf_data.R" script
-pred <- read.csv("./data/gf_cpue_timeseries.csv") %>%
+## Read in data 
+# Load groundfish data queried from Oracle -- from "get_gf_data.R" script
+pred <- read.csv(paste0(data_dir, "gf_cpue_timeseries.csv")) %>%
         rename(STATION_ID = STATION)
 
 # Load tanner core area stations -- from "get_core_area.R" script
@@ -55,33 +58,42 @@ core_stations <- read_csv("./outputs/tanner_area_cpue50.csv", show_col_types = F
 sab_hal <- c(20510, 10120)
 pcod <- c(21720, 21722)
 skate <- c(420,435,440,455,471,472,480,460,485)
-flatfish <- c(10220,10115,10130,10140,10120,10261,10210,10260)
+flatfish <- c(10220,10115,10130,10140,10120,10260,10261,10210)
 sculpin <- c(21347,21348,21368,21370,21388,21420,21311,21315,21390,21438,21371)
 eelpout <- c(24184, 24191, 24185)
 wolffish <- c(20320, 20322)
 octopus <- c(78010, 78012, 78403)
 
-guilds <- c("sab_hal", "pcod", "skate", "flatfish", "sculpin", "eelpout", "wolffish", "octopus")
+flathead_sole <- c(10130)
+rock_sole <- c(10260, 10261)
+yellowfin_sole <- c(10210)
+
+
+guilds <- c(#"sab_hal",  "skate", "flatfish", "sculpin", "eelpout", "wolffish", "octopus",
+            "pcod", "flathead_sole", "rock_sole", "yellowfin_sole")
 
 stations <- pred %>%
             select(YEAR, STATION_ID) %>%
             filter(STATION_ID %in% core_stations, 
-                   YEAR >= 1988) %>%
+                   YEAR %in% years) %>%
             distinct()
 
 # Calculate mean CPUE by guild and year  
 ben_pred <- pred %>%
-            mutate(GUILD = case_when(SPECIES_CODE %in% sab_hal ~ "sab_hal",
+            mutate(GUILD = case_when(# SPECIES_CODE %in% sab_hal ~ "sab_hal",
                                      SPECIES_CODE %in% pcod ~ "pcod",
-                                     SPECIES_CODE %in% skate ~ "skate",
-                                     SPECIES_CODE %in% flatfish ~ "flatfish",
-                                     SPECIES_CODE %in% sculpin ~ "sculpin",
-                                     SPECIES_CODE %in% eelpout ~ "eelpout",
-                                     SPECIES_CODE %in% wolffish ~ "wolffish",
-                                     SPECIES_CODE %in% octopus ~ "octopus",
+                                     # SPECIES_CODE %in% skate ~ "skate",
+                                     # SPECIES_CODE %in% flatfish ~ "flatfish",
+                                     # SPECIES_CODE %in% sculpin ~ "sculpin",
+                                     # SPECIES_CODE %in% eelpout ~ "eelpout",
+                                     # SPECIES_CODE %in% wolffish ~ "wolffish",
+                                     # SPECIES_CODE %in% octopus ~ "octopus",
+                                     SPECIES_CODE %in% flathead_sole ~ "flathead_sole",
+                                     SPECIES_CODE %in% rock_sole ~ "rock_sole",
+                                     SPECIES_CODE %in% yellowfin_sole ~ "yellowfin_sole",
                                      TRUE ~ NA)) %>%             
             filter(STATION_ID %in% core_stations, 
-                   YEAR >= 1988,
+                   YEAR %in% years,
                    !is.na(GUILD)) %>%   
             # station-level cpue by guild
             group_by(YEAR, STATION_ID, GUILD) %>%
@@ -93,7 +105,7 @@ ben_pred <- pred %>%
             # annual mean cpue by guild
             group_by(YEAR, GUILD) %>%
             summarise(CPUE_KGKM2 = mean(CPUE_KGKM2)) %>%
-            right_join(., expand.grid(YEAR = c(1988:2024), 
+            right_join(., expand.grid(YEAR = years, 
                                       GUILD = guilds)) %>%
             arrange(YEAR, GUILD) %>%
             mutate(CPUE_KGKM2 = ifelse(YEAR == 2020, NA, CPUE_KGKM2))
@@ -107,8 +119,7 @@ guild_plot <- ben_pred %>%
               labs(y = "Benthic Predator CPUE (kg/km2)", x = "Year") +
               theme_bw() +
               theme(legend.title = element_blank())
-guild_plot
-# biomass is really dominated by YFS
+guild_plot # biomass is really dominated by YFS
 
 guild_facet <- ben_pred %>%
                # pivot_longer(c(2:9), names_to = "pred_guild", values_to = "CPUE_KGKM2") %>%
@@ -119,14 +130,14 @@ guild_facet <- ben_pred %>%
                theme_bw() +
                theme(legend.title = element_blank()) +
                facet_wrap(~GUILD, scales = "free_y", ncol = 8)
-ggsave("./figures/benthic_predator.png", guild_facet,
+ggsave("./figures/benthic_predator_density.png", guild_facet,
        height = 3, width = 15)
 
 # Plot Pacific cod
 pcod_plot <- ben_pred %>%
              ggplot(aes(x = YEAR, y = pcod)) +
              geom_point() +
-             geom_line()+
+             geom_line() +
              labs(y = "Pacific Cod CPUE (kg/km2)", x = "Year") +
              theme_bw()
 ggsave("./figures/pcod_density.png", pcod_plot,
@@ -136,6 +147,7 @@ ggsave("./figures/pcod_density.png", pcod_plot,
 # Write .csv output of benthic predator density
 ben_pred %>%
   pivot_wider(names_from = GUILD, values_from = CPUE_KGKM2) %>%
+  rename(year = YEAR) %>%
   write.csv("./outputs/benthic_predator_density.csv", row.names = FALSE)
 
 
@@ -147,17 +159,11 @@ ben_pred %>%
 ## help give some sort of expectation as to how these 'overlaps' are supposed to look...
 
 ## calculate CPUE for benthic predators just at station level
-# Define corner stations
-station_defs <- read.csv("Y:/KOD_Survey/EBS Shelf/Data_Processing/Data/lookup_tables/station_lookup.csv")
-corners <- station_defs %>% 
-           filter(STATION_TYPE == "MTCA_CORNER") %>%
-           pull(STATION_ID)
-
 # define stations sampled each year
 stations <- pred %>%
             select(YEAR, STATION_ID) %>%
             filter(#STATION_ID %in% core_stations, 
-                   YEAR >= 1988) %>%
+                   YEAR %in% years) %>%
             distinct() %>%
             filter(!STATION_ID %in% corners) # remove corner stations
 
@@ -178,7 +184,7 @@ ben_pred <- pred %>%
                                      TRUE ~ NA)) %>%             
             filter(#STATION_ID %in% core_stations, 
                    STATION_ID %in% stations$STATION_ID,
-                   YEAR >= 1988,
+                   YEAR %in% years,
                    !is.na(GUILD)) %>%   
             # station-level cpue by guild
             group_by(YEAR, STATION_ID, GUILD) %>%
@@ -202,7 +208,7 @@ mat_size <- get_male_maturity(species = "TANNER",
             select(-c("A_EST", "A_SE")) %>%
             rename(MAT_SIZE = B_EST, 
                    STD_ERR = B_SE) %>%
-            right_join(., expand_grid(YEAR = c(1975:2024),
+            right_join(., expand_grid(YEAR = years,
                                       SPECIES = "TANNER", 
                                       REGION = "EBS",
                                       DISTRICT = c("ALL", "E166", "W166"))) %>%
@@ -221,7 +227,7 @@ cpue <- tanner$specimen %>%
                                     (SEX == 2 & CLUTCH_SIZE >= 1) ~ "mature_female",
                                     (SEX == 2 & CLUTCH_SIZE == 0) ~ "immature_female",
                                     TRUE ~ NA)) %>%
-        filter(YEAR >= 1988,
+        filter(YEAR %in% years,
                !is.na(CATEGORY)) %>%
         group_by(YEAR, STATION_ID, LATITUDE, LONGITUDE, AREA_SWEPT, CATEGORY) %>%
         summarise(COUNT = sum(SAMPLING_FACTOR)) %>%
@@ -236,7 +242,7 @@ cpue <- tanner$specimen %>%
         pivot_wider(names_from = CATEGORY, values_from = CPUE) %>%
         right_join(., tanner$haul %>% 
                         select(YEAR, STATION_ID) %>% 
-                        filter(YEAR >= 1988)) %>%
+                        filter(YEAR %in% years)) %>%
         mutate(immature_male = replace_na(immature_male, 0),
                mature_male = replace_na(mature_male, 0),
                immature_female = replace_na(immature_female, 0),
@@ -377,7 +383,7 @@ for(c in 1:length(crab_categories)){
   #               theme(legend.title = element_blank()) +
   #               facet_wrap(~GUILD, scales = "free")
   # # coeff_plot
-  # ggsave(paste0("./figures/predator_overlap_", crab, ".png"), 
+  # ggsave(paste0("./figures/exploratory/predator_overlap_", crab, ".png"), 
   #        coeff_plot, height = 6, width = 10)
   # 
   # 
@@ -411,7 +417,7 @@ for(c in 1:length(crab_categories)){
   #                              hjust = -0.1,
   #                              vjust = -1) +
   #                    facet_wrap(~YEAR)
-  #   ggsave(paste0("./figures/", guild, "_overlap_", crab, ".png"), guild_overlap,
+  #   ggsave(paste0("./figures/exploratory/", guild, "_overlap_", crab, ".png"), guild_overlap,
   #          height = 20, width = 30)
   # } # end guild loop
 } # end crab category loop
@@ -435,7 +441,7 @@ ggplot(correlations, aes(x = year, y = (HD), color = as.factor(crab))) +
   theme_bw() +
   theme(legend.position = "none") +
   facet_wrap(~crab + guild, scales = 'free', ncol = 8)
-ggsave(paste0("./figures/pred_overlap_HD.png"), height = 6, width = 15)
+ggsave(paste0("./figures/exploratory/pred_overlap_HD.png"), height = 6, width = 15)
 
 
 
