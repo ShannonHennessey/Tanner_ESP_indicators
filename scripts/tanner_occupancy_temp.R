@@ -87,6 +87,8 @@ ggsave("./figures/tanner_temp_occupied.png", temp_plot,
 ## Write output for Temp Occupancy indicator     
 temp_occ %>%
   select(-MEAN_BT) %>%
+  rename(year = YEAR,
+         temp_occ = TEMP_OCC) %>%
   # pivot_wider(names_from = "CATEGORY", values_from = "TEMP_OCC") %>%
   write.csv("./outputs/tanner_temp_occupied.csv", row.names = FALSE)
 

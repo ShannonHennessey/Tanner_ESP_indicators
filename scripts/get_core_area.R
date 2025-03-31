@@ -13,7 +13,7 @@ source("./scripts/setup.R")
 ## Calculate station-level CPUE
 cpue <- crabpack::calc_cpue(crab_data = tanner,
                             species = "TANNER",
-                            years = c(1988:2024))
+                            years = years)
 
 
 ## Identify stations in 50-100 CPUE percentile range

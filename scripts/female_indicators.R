@@ -46,7 +46,10 @@ ggsave("./figures/female_SAM.png")
 
 
 # Save output
-write_csv(mean_size, "./outputs/female_SAM.csv")
+mean_size %>%
+  rename(year = YEAR,
+         female_sam = MEAN_SIZE) %>%
+  write_csv("./outputs/female_SAM.csv")
 
 
 
@@ -105,5 +108,7 @@ ggsave("./figures/clutch_fullness.png")
 # Save output
 clutch_dat %>%
   select(YEAR, PROP_FULL) %>%
+  rename(year = YEAR,
+         clutch_fullness = PROP_FULL) %>%
   write_csv("./outputs/clutch_fullness.csv")
 

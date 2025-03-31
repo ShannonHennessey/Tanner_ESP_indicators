@@ -276,7 +276,11 @@ ggsave("./figures/juv_temp_1trend_DFA_loadings_trend.png",
 
 # and save loadings and trend
 write.csv(plot.CI, "./outputs/juv_temp_dfa_loadings.csv", row.names = F)
-write.csv(trend, "./outputs/juv_temp_dfa_trend.csv", row.names = F)
+
+trend %>%
+  rename(year = t,
+         dfa_temp = estimate) %>%
+  write.csv("./outputs/juv_temp_dfa_trend.csv", row.names = F)
 
 
 

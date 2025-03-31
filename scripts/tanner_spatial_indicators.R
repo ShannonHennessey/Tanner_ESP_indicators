@@ -165,6 +165,8 @@ d95 %>%
 
 
 
+test <- full_join(d95 %>% rename(year = YEAR), indicators)
+
 # Plot d95 vs. abund
 d95_v_abund_plot <- ggplot(data = d95 %>% filter(CATEGORY != "population"), 
                           aes(x = CPUE, y = d95, group = CATEGORY, color = CATEGORY)) +
@@ -175,6 +177,19 @@ d95_v_abund_plot <- ggplot(data = d95 %>% filter(CATEGORY != "population"),
                    theme_bw() +
                    theme(legend.title = element_blank()) +
                    facet_wrap(~CATEGORY, scales = "free")
+
+
+ggplot(test %>% filter(CATEGORY != "population"), 
+       aes(x = CPUE, y = d95, group = CATEGORY, color = summer_bt, label = year)) +
+  geom_point() +
+  # geom_line() +
+  geom_smooth(method = 'lm') +
+  labs(x = "CPUE", y = expression("Area Occupied ("~nmi^2~")")) +
+  # lims(x = c(0,7000)) +
+  geom_text(hjust = 0.5, vjust = -0.5, size = 3) +
+  theme_bw() +
+  theme(legend.title = element_blank()) +
+  facet_wrap(~CATEGORY, scales = "free")
 
 ggsave("./figures/tanner_area_v_abund.png", d95_v_abund_plot,
        height = 6, width = 10)
@@ -209,18 +224,18 @@ cpue_bb <- calc_cpue(crab_data = tanner,
           group_by(YEAR, STRATUM2) %>%
           summarise(CPUE = sum(CPUE)) %>%
           pivot_wider(names_from = STRATUM2, values_from = CPUE) %>%
-          mutate(fraction_BB = BB/(BB + NOT_BB)) %>%
+          mutate(fraction_bb = BB/(BB + NOT_BB)) %>%
           right_join(., expand.grid(YEAR = years)) %>%
           arrange(YEAR)
 
 
 # Plot
 cpue_bb %>%
-  ggplot(aes(x = YEAR, y = fraction_BB)) +
+  ggplot(aes(x = YEAR, y = fraction_bb)) +
   geom_point() +
   geom_line() +
   labs(x = "Year", y = "Fraction of Tanner Crab Stock in Bristol Bay") +
-  geom_hline(aes(yintercept = mean(fraction_BB, na.rm = TRUE)), linetype = 5) +
+  geom_hline(aes(yintercept = mean(fraction_bb, na.rm = TRUE)), linetype = 5) +
   xlim(min(years), max(years)) +
   theme_bw()
 ggsave("./figures/fraction_bb.png")
@@ -228,7 +243,8 @@ ggsave("./figures/fraction_bb.png")
 
 ## Save output
 cpue_bb %>%
-  select(YEAR, fraction_BB) %>%
+  select(YEAR, fraction_bb) %>%
+  rename(year = YEAR) %>%
   write_csv("./outputs/fraction_bb.csv")
 
 

@@ -70,7 +70,7 @@ abund <- rbind(all, all_bcs, mat_bcs, imm_bcs, mat, imm) %>%
          mutate(POP_PREVALENCE = (pop_bcs / pop)*100,
                 LG_PREVALENCE = (mat_bcs / mat)*100,
                 SM_PREVALENCE = (imm_bcs / imm)*100) %>%
-         filter(YEAR >= 1989) %>%
+         filter(YEAR %in% years) %>%
          select(SPECIES, YEAR, REGION, POP_PREVALENCE, LG_PREVALENCE, SM_PREVALENCE)
 
 
@@ -82,7 +82,7 @@ write.csv(abund, "./outputs/bcs_prevalence.csv", row.names = FALSE)
 ## Plot time series ------------------------------------------------------------
 plot_dat <- abund %>%
             pivot_longer(4:6, names_to = "CATEGORY", values_to = "PREVALENCE") %>%
-            right_join(., expand_grid(YEAR = c(1989:current_year),
+            right_join(., expand_grid(YEAR = years,
                                       SPECIES = "TANNER", 
                                       REGION = "EBS",
                                       CATEGORY = unique(.$CATEGORY)))
