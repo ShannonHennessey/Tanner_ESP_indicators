@@ -1,9 +1,23 @@
 ## Purpose: To calculate (1) mean bottom temperature, (2) cold pool extent, 
-##          (3) mean surface temperature, (4) 
-##          from the EBS Bottom Trawl Survey time series. 
+##          (3) mean surface temperature from the EBS Bottom Trawl Survey timeseries,
+##          and (4) mean winter Aleutian Low - Beaufort Sea Anticyclone 
+##          (https://psl.noaa.gov/data/timeseries/ALBSA/) using 850mb height from 
+##          NCEP R1 4 pts.
 ##
 ## NOTES:
 ## - using 1988+, but think about imputing temperature for missing years
+## - bottom temperature: positive? for both juveniles and larvae maybe? increased gonadogenesis/enbryo incubation
+## - surface temperature - warm = good, favorable production of copepod nauplii?
+##
+## THINK ABOUT: 
+## - bottom temp, cold pool extent, juv temp occupancy all highly correlated...
+##   - does it make sense to use all 3 in DFA, or just pick one? (prob juv temp)
+##   - only thing is eg. 1999, lg cold pool but avg juv temp; 2012 lg cold pool, very low juv temp
+##     - thoughts?? 1999 avoided cold pool, 2012 didn't avoid....
+##     - immature males (and kind of mature males) had low area occupied in those years...but not females
+##     - 2012 had much higher density of immature males (~2x)
+##
+## ALPI: 3-year running averages??
 
 
 ## Read in setup
@@ -82,12 +96,35 @@ ggsave("./figures/surface_temp.png")
 
 
 
+## Compute mean winter Aleutian Low index
+mean_AL <- read.csv(paste0(data_dir, "albsa_daily.csv")) %>% 
+           filter(month %in% c(12, 1, 2, 3)) %>% 
+           mutate(year = ifelse(month == 12, year + 1, year)) %>%
+           filter(year >= 1979) %>%
+           group_by(year) %>%
+           summarize(mean_AL = mean(ALBSA)) %>%
+           rename(., YEAR = year)
+
+# Plot
+mean_AL %>%
+  ggplot(aes(x = YEAR, y = mean_AL)) +
+  geom_point() +
+  geom_line() +
+  labs(y = "ALPI", x = "Year") +
+  geom_hline(aes(yintercept = mean(mean_AL, na.rm = TRUE)), linetype = 5) +
+  xlim(min(years), max(years)) +
+  theme_bw()
+ggsave("./figures/ALPI.png")
+
+
 
 ## Combine indices and save output
 full_join(mean_bt, cp_extent) %>%
   full_join(., mean_st) %>%
-  arrange(YEAR) %>%
-  write_csv("./outputs/temp_coldpool.csv")
+  full_join(., mean_AL) %>%
+  arrange(YEAR) %>% 
+  rename(year = YEAR) %>%
+  write_csv("./outputs/temp_coldpool_AL.csv")
 
 
 
