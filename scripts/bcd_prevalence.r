@@ -1,4 +1,4 @@
-## Purpose: To calculate the visual prevalence of Bitter Crab Syndrome (BCS) in 
+## Purpose: To calculate the visual prevalence of Bitter Crab Disease (BCD) in 
 ##          Tanner crab via area-expanded catch per unit effort (abundance) for
 ##          small crab (< 70mm), as well as for the whole EBS population.
 
@@ -8,14 +8,14 @@ source("./scripts/setup.R")
 
 
 ## Subset specimen by size and disease status
-# mature, with BCS
-tanner_mat_bcs <- tanner
-tanner_mat_bcs$specimen <- tanner_mat_bcs$specimen %>%
+# mature, with bcd
+tanner_mat_bcd <- tanner
+tanner_mat_bcd$specimen <- tanner_mat_bcd$specimen %>%
                            filter(SIZE >= 70,
                                   DISEASE_CODE == 2) 
-# immature, with BCS
-tanner_imm_bcs <- tanner
-tanner_imm_bcs$specimen <- tanner_imm_bcs$specimen %>%
+# immature, with bcd
+tanner_imm_bcd <- tanner
+tanner_imm_bcd$specimen <- tanner_imm_bcd$specimen %>%
                            filter(SIZE < 70,
                                   DISEASE_CODE == 2) 
 # mature, all
@@ -28,9 +28,9 @@ tanner_imm <- tanner
 tanner_imm$specimen <- tanner_imm$specimen %>%
                        filter(SIZE < 70)
 
-# all BCS
-tanner_bcs <- tanner
-tanner_bcs$specimen <- tanner_bcs$specimen %>%
+# all bcd
+tanner_bcd <- tanner
+tanner_bcd$specimen <- tanner_bcd$specimen %>%
                        filter(DISEASE_CODE == 2) 
 
 
@@ -39,18 +39,18 @@ all <- calc_bioabund(crab_data = tanner,
                      species = "TANNER",
                      spatial_level = "region") %>%
        mutate(CATEGORY = "pop")
-all_bcs <- calc_bioabund(crab_data = tanner_bcs,
+all_bcd <- calc_bioabund(crab_data = tanner_bcd,
                          species = "TANNER",
                          spatial_level = "region") %>%
-           mutate(CATEGORY = "pop_bcs")
-mat_bcs <- calc_bioabund(crab_data = tanner_mat_bcs,
+           mutate(CATEGORY = "pop_bcd")
+mat_bcd <- calc_bioabund(crab_data = tanner_mat_bcd,
                          species = "TANNER",
                          spatial_level = "region") %>%
-           mutate(CATEGORY = "mat_bcs")
-imm_bcs <- calc_bioabund(crab_data = tanner_imm_bcs,
+           mutate(CATEGORY = "mat_bcd")
+imm_bcd <- calc_bioabund(crab_data = tanner_imm_bcd,
                          species = "TANNER",
                          spatial_level = "region") %>%
-           mutate(CATEGORY = "imm_bcs")
+           mutate(CATEGORY = "imm_bcd")
 mat <- calc_bioabund(crab_data = tanner_mat,
                     species = "TANNER",
                     spatial_level = "region") %>%
@@ -62,20 +62,20 @@ imm <- calc_bioabund(crab_data = tanner_imm,
 
 
 ## Combine abundance estimates, calculate percent prevalence
-abund <- rbind(all, all_bcs, mat_bcs, imm_bcs, mat, imm) %>%
+abund <- rbind(all, all_bcd, mat_bcd, imm_bcd, mat, imm) %>%
          select(-c("ABUNDANCE_CV","ABUNDANCE_CI", 
                    "BIOMASS_MT", "BIOMASS_MT_CV", "BIOMASS_MT_CI", 
                    "BIOMASS_LBS", "BIOMASS_LBS_CV", "BIOMASS_LBS_CI")) %>%
          pivot_wider(names_from = CATEGORY, values_from = ABUNDANCE) %>%
-         mutate(POP_PREVALENCE = (pop_bcs / pop)*100,
-                LG_PREVALENCE = (mat_bcs / mat)*100,
-                SM_PREVALENCE = (imm_bcs / imm)*100) %>%
+         mutate(POP_PREVALENCE = ifelse(pop_bcd == 0, NA, (pop_bcd/pop)*100),
+                LG_PREVALENCE = ifelse(pop_bcd == 0, NA, (mat_bcd/mat)*100),
+                SM_PREVALENCE = ifelse(pop_bcd == 0, NA, (imm_bcd/imm)*100)) %>%
          filter(YEAR %in% years) %>%
          select(SPECIES, YEAR, REGION, POP_PREVALENCE, LG_PREVALENCE, SM_PREVALENCE)
 
 
 ## Write .csv for tanner crab indicator 
-write.csv(abund, "./outputs/bcs_prevalence.csv", row.names = FALSE)
+write.csv(abund, "./outputs/bcd_prevalence.csv", row.names = FALSE)
 
 
 
@@ -91,8 +91,8 @@ plot_dat <- abund %>%
 pop_plot <- ggplot(plot_dat, aes(x = YEAR, y = PREVALENCE, group = as.factor(CATEGORY))) +
             geom_point(aes(colour = CATEGORY), size = 3) +
             geom_line(aes(colour = CATEGORY), size = 1) +
-            scale_x_continuous(limits = c(1988, current_year),
-                               breaks = seq(1990, current_year, 5)) +
+            scale_x_continuous(limits = c(min(years), current_year),
+                               breaks = seq(1980, current_year, 5)) +
             scale_color_manual(labels = c("Small prevalence", "Large prevalence", 
                                           "Population prevalence"), 
                                values = c("#E69F00", "#56B4E9", "#009E73")) +
@@ -103,7 +103,7 @@ pop_plot <- ggplot(plot_dat, aes(x = YEAR, y = PREVALENCE, group = as.factor(CAT
                   axis.text.x = element_text(size = 14), 
                   axis.text.y = element_text(size = 12),
                   legend.title = element_blank())
-ggsave("./figures/bcs_prev.png", pop_plot,
+ggsave("./figures/bcd_prev.png", pop_plot,
        height = 6, width = 10)
 
 
@@ -118,8 +118,8 @@ names <- list("SM_PREVALENCE" = "Small prevalence",
 facet_plot <- ggplot(plot_dat, aes(x = YEAR, y = PREVALENCE, group = as.factor(CATEGORY))) +
               geom_point(aes(colour = CATEGORY), size = 3) +
               geom_line(aes(colour = CATEGORY), size = 1) +
-              scale_x_continuous(limits = c(1988, current_year),
-                                 breaks = seq(1990, current_year, 5)) +
+              scale_x_continuous(limits = c(min(years), current_year),
+                                 breaks = seq(1980, current_year, 5)) +
               scale_color_manual(values = c("#E69F00", "#56B4E9", "#009E73")) +
               labs(y = "Disease Prevalence (%)", x = "Year") +
               theme_bw() +
@@ -139,18 +139,18 @@ facet_plot <- ggplot(plot_dat, aes(x = YEAR, y = PREVALENCE, group = as.factor(C
 # Just immature crab plot
 imm_plot <- ggplot(plot_dat %>% filter(CATEGORY == "SM_PREVALENCE"), 
                    aes(x = YEAR, y = PREVALENCE)) +
-            geom_point(colour = "#009E73", size = 3) +
-            geom_line(colour = "#009E73", size = 1) +
-            scale_x_continuous(limits = c(1988, current_year),
-                               breaks = seq(1990, current_year, 5)) +
+            geom_point() +
+            geom_line() +
+            scale_x_continuous(limits = c(min(years), current_year),
+                               breaks = seq(1980, current_year, 5)) +
             geom_hline(aes(yintercept = mean(PREVALENCE, na.rm = TRUE)), linetype = 5) +
-            labs(y = "Disease Prevalence (%) - Small Tanner Crab (< 70mm)", x = "Year") +
+            labs(y = "Juvenile Tanner Disease Prevalence (%)", x = "Year") +
             theme_bw() +
             theme(axis.title.y = element_text(size = 14),
                   axis.text.x = element_text(size = 12), 
                   axis.text.y = element_text(size = 12),
                   legend.title = element_blank())
   
-ggsave("./figures/bcs_imm_prev.png", imm_plot,
-       height = 6, width = 10)
+ggsave("./figures/bcd_imm_prev.png", imm_plot,
+       height = 4, width = 6)
 
