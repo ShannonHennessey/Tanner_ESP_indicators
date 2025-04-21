@@ -42,7 +42,8 @@ polychaeta <- c(50000:59099)
 worms_misc <- c(92000, 92500, 92502, 92511, 93100, 94000, 94500)
 barnacles <- c(65000, 65100:65211)
 shrimps <- c(66000:66912)
-crabs <- c(68000:69599)
+crabs <- c(68000:69599) 
+crabs <- crabs[!crabs %in% c(68560, 68580, 68590, 69322, 69323, 69400, 69310, 68550, 68541)] # remove commercial species
 gastropods <- c(71000:73999)
 bivalves <- c(74000:75799)
 asteroidea <- c(80000:82499)
@@ -53,19 +54,19 @@ porifera <- c(91000:91999)
 bryozoans <- c(95000:95499)
 ascidians <- c(98000:99909)
 
-guilds <- c("pennatulacea", "actinaria", "polychaeta", "barnacles", #"gersemia", 
+guilds <- c(#"gersemia", "pennatulacea", "actinaria", "barnacles", "porifera", "ascidians"
             "shrimps", "crabs", "gastropods", "bivalves", "asteroidea", "echinoidea",
-            "ophiuroidea", "holothuroidea", "porifera", "bryozoans", "ascidians")
+            "polychaeta",  "ophiuroidea", "holothuroidea",  "bryozoans")
 
 
 
 # Calculate mean CPUE by guild and year  
 ben_prey <- prey %>%
-            mutate(GUILD = case_when(#SPECIES_CODE %in% gersemia ~ "gersemia",
-                                     SPECIES_CODE %in% pennatulacea ~ "pennatulacea",
-                                     SPECIES_CODE %in% actinaria ~ "actinaria",
+            mutate(GUILD = case_when(# SPECIES_CODE %in% gersemia ~ "gersemia",
+                                     # SPECIES_CODE %in% pennatulacea ~ "pennatulacea",
+                                     # SPECIES_CODE %in% actinaria ~ "actinaria",
                                      SPECIES_CODE %in% polychaeta ~ "polychaeta",
-                                     SPECIES_CODE %in% barnacles ~ "barnacles",
+                                     # SPECIES_CODE %in% barnacles ~ "barnacles",
                                      SPECIES_CODE %in% shrimps ~ "shrimps",
                                      SPECIES_CODE %in% crabs ~ "crabs",
                                      SPECIES_CODE %in% gastropods ~ "gastropods",
@@ -74,9 +75,9 @@ ben_prey <- prey %>%
                                      SPECIES_CODE %in% echinoidea ~ "echinoidea",
                                      SPECIES_CODE %in% ophiuroidea ~ "ophiuroidea",
                                      SPECIES_CODE %in% holothuroidea ~ "holothuroidea",
-                                     SPECIES_CODE %in% porifera ~ "porifera",
+                                     # SPECIES_CODE %in% porifera ~ "porifera",
                                      SPECIES_CODE %in% bryozoans ~ "bryozoans",
-                                     SPECIES_CODE %in% ascidians ~ "ascidians",
+                                     # SPECIES_CODE %in% ascidians ~ "ascidians",
                                      TRUE ~ NA)) %>%             
             filter(STATION_ID %in% core_stations, 
                    YEAR %in% years,
@@ -124,14 +125,26 @@ guild_facet <- ben_prey %>%
                theme_bw() +
                theme(legend.title = element_blank()) +
                facet_wrap(~GUILD, scales = "free_y", nrow = 4)
-ggsave("./figures/benthic_prey_density.png", guild_facet,
+ggsave(paste0(fig_dir, "benthic_prey_facet.png"), guild_facet,
        height = 8, width = 10)
 
 
+ben_prey %>%
+  filter(GUILD == "total_invert") %>%
+  ggplot(aes(x = YEAR, y = CPUE_KGKM2)) +
+  geom_point() +
+  geom_line() +
+  geom_hline(aes(yintercept = mean(CPUE_KGKM2, na.rm = TRUE)), linetype = 5) +
+  labs(y = "Benthic Invertebrate Prey CPUE (kg/km2)", x = "Year") +
+  theme_bw() +
+  theme(legend.title = element_blank()) 
+ggsave(paste0(fig_dir, "benthic_prey_density.png"),
+       height = 4, width = 6)
 
 ## Write .csv output of benthic prey density
 ben_prey %>%
   pivot_wider(names_from = GUILD, values_from = CPUE_KGKM2) %>%
   rename(year = YEAR) %>%
+  select(year, total_invert) %>%
   write_csv("./outputs/benthic_invert_density.csv")
 

@@ -130,8 +130,21 @@ guild_facet <- ben_pred %>%
                theme_bw() +
                theme(legend.title = element_blank()) +
                facet_wrap(~GUILD, scales = "free_y", ncol = 8)
-ggsave("./figures/benthic_predator_density.png", guild_facet,
+ggsave(paste0(fig_dir, "benthic_predator_facet.png"), guild_facet,
        height = 3, width = 15)
+
+ben_pred %>%
+  group_by(YEAR) %>%
+  mutate(total_pred = sum(CPUE_KGKM2)) %>%
+  ggplot(aes(x = YEAR, y = total_pred)) +
+  geom_point() +
+  geom_line() +
+  geom_hline(aes(yintercept = mean(total_pred, na.rm = TRUE)), linetype = 5) +
+  labs(y = "Benthic Predator CPUE (kg/km2)", x = "Year") +
+  theme_bw() +
+  theme(legend.title = element_blank()) 
+ggsave(paste0(fig_dir, "benthic_predator_density.png"),
+       height = 4, width = 6)
 
 # Plot Pacific cod
 pcod_plot <- ben_pred %>%
@@ -140,13 +153,14 @@ pcod_plot <- ben_pred %>%
              geom_line() +
              labs(y = "Pacific Cod CPUE (kg/km2)", x = "Year") +
              theme_bw()
-ggsave("./figures/pcod_density.png", pcod_plot,
+ggsave(paste0(fig_dir, "pcod_density.png"), pcod_plot,
        height = 6, width = 10)
 
 
 # Write .csv output of benthic predator density
 ben_pred %>%
-  pivot_wider(names_from = GUILD, values_from = CPUE_KGKM2) %>%
+  group_by(YEAR) %>%
+  summarise(total_pred = sum(CPUE_KGKM2)) %>%
   rename(year = YEAR) %>%
   write.csv("./outputs/benthic_predator_density.csv", row.names = FALSE)
 
@@ -383,7 +397,7 @@ for(c in 1:length(crab_categories)){
   #               theme(legend.title = element_blank()) +
   #               facet_wrap(~GUILD, scales = "free")
   # # coeff_plot
-  # ggsave(paste0("./figures/exploratory/predator_overlap_", crab, ".png"), 
+  # ggsave(paste0(fig_dir, "exploratory/predator_overlap_", crab, ".png"), 
   #        coeff_plot, height = 6, width = 10)
   # 
   # 
@@ -417,7 +431,7 @@ for(c in 1:length(crab_categories)){
   #                              hjust = -0.1,
   #                              vjust = -1) +
   #                    facet_wrap(~YEAR)
-  #   ggsave(paste0("./figures/exploratory/", guild, "_overlap_", crab, ".png"), guild_overlap,
+  #   ggsave(paste0(fig_dir, "exploratory/", guild, "_overlap_", crab, ".png"), guild_overlap,
   #          height = 20, width = 30)
   # } # end guild loop
 } # end crab category loop
@@ -441,7 +455,7 @@ ggplot(correlations, aes(x = year, y = (HD), color = as.factor(crab))) +
   theme_bw() +
   theme(legend.position = "none") +
   facet_wrap(~crab + guild, scales = 'free', ncol = 8)
-ggsave(paste0("./figures/exploratory/pred_overlap_HD.png"), height = 6, width = 15)
+ggsave(paste0(fig_dir, "exploratory/pred_overlap_HD.png"), height = 6, width = 15)
 
 
 

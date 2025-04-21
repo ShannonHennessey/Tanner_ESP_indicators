@@ -6,10 +6,12 @@
 ##
 ## NOTES:
 ## - look at differences in E166 vs. W166?
-## - mature size -- new hardshell females only? yes?
+## - mature size
+##   - new hardshell females only? yes?
+##   - split into E and W?
 ## - clutch fullness -- how do we make this relate to fecundity more??
 ##   - lg half full female might still be more fecund than small full female
-##   - fit a mroel that accounts for size?
+##   - fit a model that accounts for size?
 ## - sperm limitation? i.e. why are we seeing low clutch fullness?
 
 
@@ -42,7 +44,7 @@ ggplot(mean_size, aes(x = YEAR, y = MEAN_SIZE)) +
   geom_hline(aes(yintercept = mean(MEAN_SIZE, na.rm = TRUE)), linetype = 5) +
   xlim(min(years), max(years)) +
   theme_bw()
-ggsave("./figures/female_SAM.png")
+ggsave(paste0(fig_dir, "female_SAM.png"), height = 4, width = 6)
 
 
 # Save output
@@ -102,7 +104,7 @@ ggplot(clutch_dat, aes(x = YEAR, y = PROP_FULL)) +
   geom_hline(aes(yintercept = mean(PROP_FULL, na.rm = TRUE)), linetype = 5) +
   xlim(min(years), max(years)) +
   theme_bw()
-ggsave("./figures/clutch_fullness.png")
+ggsave(paste0(fig_dir, "clutch_fullness.png"), height = 4, width = 6)
 
 
 # Save output

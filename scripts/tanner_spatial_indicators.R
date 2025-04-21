@@ -79,29 +79,31 @@ COD <- cpue %>%
 
 
 # Plot latitude centroid
-lat_cod <- ggplot(data = COD %>% filter(CATEGORY != "population"),
-                  aes(x = YEAR, y = LAT_COD, group = CATEGORY, color = CATEGORY)) +
+lat_cod <- ggplot(data = COD %>% filter(CATEGORY == "mature_male"),
+                  aes(x = YEAR, y = LAT_COD)) +#, group = CATEGORY, color = CATEGORY)) +
            geom_point() +
            geom_line() +
-           labs(x = "Year", y = expression(paste("Center of Abundance (", degree, "Latitude)"))) +           
+           geom_hline(aes(yintercept = mean(LAT_COD, na.rm = TRUE)), linetype = 5) +
+           labs(x = "Year", y = expression(paste("Mature Male Center of Abundance (", degree, "Latitude)"))) +           
            theme_bw() +
-           theme(legend.title = element_blank()) 
+           theme(legend.title = element_blank())
 
-ggsave("./figures/tanner_centroid_latitude.png", lat_cod,
-       height = 6, width = 10)
+ggsave(paste0(fig_dir, "tanner_centroid_latitude.png"), lat_cod,
+       height =  4, width = 6)
 
 
 # Plot longitude centroid
-lon_cod <- ggplot(data = COD %>% filter(CATEGORY != "population"),
-                  aes(x = YEAR, y = LON_COD, group = CATEGORY, color = CATEGORY)) +
+lon_cod <- ggplot(data = COD %>% filter(CATEGORY == "mature_male"),
+                  aes(x = YEAR, y = LON_COD)) +#, group = CATEGORY, color = CATEGORY)) +
            geom_point() +
            geom_line() +
-           labs(x = "Year", y = expression(paste("Center of Abundance (", degree, "Longitude)"))) +           
+           geom_hline(aes(yintercept = mean(LON_COD, na.rm = TRUE)), linetype = 5) +
+           labs(x = "Year", y = expression(paste("Mature Male Center of Abundance (", degree, "Longitude)"))) +           
            theme_bw() +
            theme(legend.title = element_blank()) 
 
-ggsave("./figures/tanner_centroid_longitude.png", lon_cod,
-       height = 6, width = 10)
+ggsave(paste0(fig_dir, "tanner_centroid_longitude.png"), lon_cod,
+       height = 4, width = 6)
 
 
 # Write output for COD indicator     
@@ -138,23 +140,33 @@ d95 <- cpue %>%
        mutate(d95 = purrr::map_dbl(data, f_d95_est)) %>% #apply d95 function to each element 
        unnest(cols = c(data)) %>%
        group_by(YEAR, CATEGORY) %>%
-       summarise(CPUE = sum(COUNT) / sum(AREA_SWEPT), # add a column for total cpue of each group in each year
+       summarise(CPUE = sum(CPUE), # add a column for total cpue of each group in each year
                  d95 = mean(d95)) %>% # take 'mean' just to get one value (they are all the same)
        right_join(., expand_grid(YEAR = years,
                                  CATEGORY = unique(cpue$CATEGORY))) %>%
        arrange(YEAR)
 
 # Plot
-d95_plot <- ggplot(data = d95 %>% filter(CATEGORY != "population"), 
-                   aes(x = YEAR, y = d95, group = CATEGORY, color = CATEGORY)) +
-            geom_point() +
-            geom_line() +
-            labs(x = "Year", y = expression("Area Occupied ("~nmi^2~")")) +
-            theme_bw() +
-            theme(legend.title = element_blank()) 
+ggplot(data = d95 %>% filter(CATEGORY != "population"), 
+       aes(x = YEAR, y = d95, group = CATEGORY, color = CATEGORY)) +
+  geom_point() +
+  geom_line() +
+  labs(x = "Year", y = expression("Area Occupied ("~nmi^2~")")) +
+  theme_bw() +
+  theme(legend.title = element_blank()) 
 
-ggsave("./figures/tanner_area_occupied.png", d95_plot,
-       height = 6, width = 10)
+
+ggplot(data = d95 %>% filter(CATEGORY == "mature_male"),
+       aes(x = YEAR, y = d95)) +#, group = CATEGORY, color = CATEGORY)) +
+  geom_point() +
+  geom_line() +
+  geom_hline(aes(yintercept = mean(d95, na.rm = TRUE)), linetype = 5) +
+  labs(x = "Year", y = expression("Mature Male Area Occupied ("~nmi^2~")")) +
+  theme_bw() +
+  theme(legend.title = element_blank()) 
+
+ggsave(paste0(fig_dir, "tanner_area_occupied.png"),
+       height = 4, width = 6)
 
 
 # Write output for D95 indicator     
@@ -178,6 +190,9 @@ d95_v_abund_plot <- ggplot(data = d95 %>% filter(CATEGORY != "population"),
                    theme(legend.title = element_blank()) +
                    facet_wrap(~CATEGORY, scales = "free")
 
+# summary(lm(d95$d95[which(d95$CATEGORY == "mature_male")] ~ d95$CPUE[which(d95$CATEGORY == "mature_male")]))
+# no significant relationship -- p = 0.09, r2 = 0.045
+
 
 ggplot(test %>% filter(CATEGORY != "population"), 
        aes(x = CPUE, y = d95, group = CATEGORY, color = summer_bt, label = year)) +
@@ -191,7 +206,7 @@ ggplot(test %>% filter(CATEGORY != "population"),
   theme(legend.title = element_blank()) +
   facet_wrap(~CATEGORY, scales = "free")
 
-ggsave("./figures/tanner_area_v_abund.png", d95_v_abund_plot,
+ggsave(paste0(fig_dir, "tanner_area_v_abund.png"), d95_v_abund_plot,
        height = 6, width = 10)
 
 
@@ -238,7 +253,7 @@ cpue_bb %>%
   geom_hline(aes(yintercept = mean(fraction_bb, na.rm = TRUE)), linetype = 5) +
   xlim(min(years), max(years)) +
   theme_bw()
-ggsave("./figures/fraction_bb.png")
+ggsave(paste0(fig_dir, "fraction_bb.png"), height = 4, width = 6)
 
 
 ## Save output

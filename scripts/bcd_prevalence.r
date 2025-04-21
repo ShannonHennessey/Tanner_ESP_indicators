@@ -103,7 +103,7 @@ pop_plot <- ggplot(plot_dat, aes(x = YEAR, y = PREVALENCE, group = as.factor(CAT
                   axis.text.x = element_text(size = 14), 
                   axis.text.y = element_text(size = 12),
                   legend.title = element_blank())
-ggsave("./figures/bcd_prev.png", pop_plot,
+ggsave(paste0(fig_dir, "bcd_prev.png"), pop_plot,
        height = 6, width = 10)
 
 
@@ -151,6 +151,6 @@ imm_plot <- ggplot(plot_dat %>% filter(CATEGORY == "SM_PREVALENCE"),
                   axis.text.y = element_text(size = 12),
                   legend.title = element_blank())
   
-ggsave("./figures/bcd_imm_prev.png", imm_plot,
+ggsave(paste0(fig_dir, "bcd_imm_prev.png"), imm_plot,
        height = 4, width = 6)
 

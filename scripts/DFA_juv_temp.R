@@ -40,7 +40,7 @@ dat %>%
   theme_bw() +
   theme(axis.title.x = element_blank()) +
   ylab("Value")
-ggsave("./figures/juv_temp_indicatorsTS.png", 
+ggsave(paste0(fig_dir, "juv_temp_indicatorsTS.png"), 
        width = 12, height = 5.5)
 
 
@@ -190,7 +190,7 @@ ggpubr::ggarrange(loadings.plot,
                   trend.plot,
                   ncol = 2,
                   widths = c(0.45, 0.55))
-ggsave("./figures/juv_temp_2trend_DFA_loadings_trend.png", 
+ggsave(paste0(fig_dir, "juv_temp_2trend_DFA_loadings_trend.png"), 
        width = 12, height = 5.5)
 
 
@@ -270,7 +270,7 @@ ggpubr::ggarrange(loadings.plot,
                   trend.plot,
                   ncol = 2,
                   widths = c(0.45, 0.55))
-ggsave("./figures/juv_temp_1trend_DFA_loadings_trend.png", 
+ggsave(paste0(fig_dir, "juv_temp_1trend_DFA_loadings_trend.png"), 
        width = 12, height = 5.5)
 
 

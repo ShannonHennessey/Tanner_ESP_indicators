@@ -17,7 +17,8 @@
 ##     - immature males (and kind of mature males) had low area occupied in those years...but not females
 ##     - 2012 had much higher density of immature males (~2x)
 ##
-## ALPI: 3-year running averages??
+## ALPI: 3-year running averages?? -- no, because acting on larval stage
+##   - Nov-Jan? Newman et al. 2016 PDO revisited - peak months for ALPI association
 
 
 ## Read in setup
@@ -26,16 +27,16 @@ source("./scripts/setup.R")
 
 ## Extract haul data
 haul <- tanner$haul
-
+haul_years <- c(1975:current_year)
 
 ## Compute mean summer bottom temperature
 mean_bt <- haul %>%
-           filter(YEAR %in% years,
+           filter(YEAR >= 1975,
                   !HAUL_TYPE == 17) %>%
            distinct(YEAR, STATION_ID, GEAR_TEMPERATURE) %>%
            group_by(YEAR) %>%
            summarise(summer_bt = mean(GEAR_TEMPERATURE, na.rm = T)) %>%
-           right_join(expand.grid(YEAR = years))
+           right_join(expand.grid(YEAR = haul_years))
 
 # Plot
 mean_bt %>%
@@ -46,19 +47,20 @@ mean_bt %>%
   geom_hline(aes(yintercept = mean(summer_bt, na.rm = TRUE)), linetype = 5) +
   xlim(min(years), max(years)) +
   theme_bw()
-ggsave("./figures/bottom_temp.png")
+ggsave(paste0(fig_dir, "bottom_temp.png"), height = 4, width = 6)
+
 
 
 
 ## Compute cold pool areal extent
 cp_extent <- haul %>%
-             filter(YEAR %in% years,
+             filter(YEAR >= 1975,
                     !HAUL_TYPE == 17,
                     !(STATION_ID %in% corners)) %>%
              distinct(YEAR, STATION_ID, GEAR_TEMPERATURE) %>%
              group_by(YEAR) %>%
              summarise(cp_extent = sum(GEAR_TEMPERATURE < 2, na.rm = T) * 401) %>%
-             right_join(expand.grid(YEAR = years))
+             right_join(expand.grid(YEAR = haul_years))
 
 # Plot
 cp_extent %>%
@@ -69,18 +71,18 @@ cp_extent %>%
   geom_hline(aes(yintercept = mean(cp_extent, na.rm = TRUE)), linetype = 5) +
   xlim(min(years), max(years)) +
   theme_bw()
-ggsave("./figures/coldpool_extent.png")
+ggsave(paste0(fig_dir, "coldpool_extent.png"), height = 4, width = 6)
 
 
 
 ## Compute mean summer surface temperature
 mean_st <- haul %>%
-           filter(YEAR %in% years,
+           filter(YEAR >= 1975,
                   !HAUL_TYPE == 17) %>%
            distinct(YEAR, STATION_ID, SURFACE_TEMPERATURE) %>%
            group_by(YEAR) %>%
            summarise(summer_st = mean(SURFACE_TEMPERATURE, na.rm = T)) %>%
-           right_join(expand.grid(YEAR = years))
+           right_join(expand.grid(YEAR = haul_years))
 
 # Plot
 mean_st %>%
@@ -91,7 +93,7 @@ mean_st %>%
   geom_hline(aes(yintercept = mean(summer_st, na.rm = TRUE)), linetype = 5) +
   xlim(min(years), max(years)) +
   theme_bw()
-ggsave("./figures/surface_temp.png")
+ggsave(paste0(fig_dir, "surface_temp.png"), height = 4, width = 6)
 
 
 
@@ -100,10 +102,10 @@ ggsave("./figures/surface_temp.png")
 mean_AL <- read.csv(paste0(data_dir, "albsa_daily.csv")) %>% 
            filter(month %in% c(12, 1, 2, 3)) %>% 
            mutate(year = ifelse(month == 12, year + 1, year)) %>%
-           filter(year >= 1979) %>%
+           filter(year >= 1975) %>%
            group_by(year) %>%
            summarize(mean_AL = mean(ALBSA)) %>%
-           rename(., YEAR = year)
+           rename(YEAR = year)
 
 # Plot
 mean_AL %>%
@@ -114,7 +116,7 @@ mean_AL %>%
   geom_hline(aes(yintercept = mean(mean_AL, na.rm = TRUE)), linetype = 5) +
   xlim(min(years), max(years)) +
   theme_bw()
-ggsave("./figures/ALPI.png")
+ggsave(paste0(fig_dir, "ALPI.png"), height = 4, width = 6)
 
 
 

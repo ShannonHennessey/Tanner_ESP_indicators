@@ -35,7 +35,7 @@ ggplot(ne_countries(scale = "medium", returnclass = "sf")) +
   coord_sf(xlim = c(-180, -157), ylim = c(54, 62.5), expand = FALSE) +
   theme_bw() +
   theme(legend.position = "none")
-ggsave("./figures/tanner_core_area.png", height = 6, width = 10)
+ggsave(paste0(fig_dir, "tanner_core_area.png"), height = 6, width = 10)
 
 
 ## Write .csv for stations in 50th percentile of avg CPUE  

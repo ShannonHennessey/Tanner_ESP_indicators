@@ -74,7 +74,7 @@ occ_esp %>%
   labs(x = "Year", y = "Mean Chlorophyll-a Concentration (µg/L)") +
   xlim(min(years), max(years)) +
   theme_bw() 
-ggsave("./figures/chla_concentration.png")
+ggsave(paste0(fig_dir, "chla_concentration.png"), height = 6, width = 10)
 
 
 

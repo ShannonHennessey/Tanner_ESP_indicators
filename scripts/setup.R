@@ -15,9 +15,12 @@ library(rnaturalearth)
 
 ## Set data directory
 data_dir <- "Y:/KOD_Research/Hennessey/Tanner_ESP/data/"
+fig_dir <- "Y:/KOD_Research/Hennessey/Tanner_ESP/figures/"
+
+
 ## Set years
 current_year <- 2024
-years <- 1988:current_year
+years <- 1982:current_year
 
 
 ## Pull Tanner specimen data

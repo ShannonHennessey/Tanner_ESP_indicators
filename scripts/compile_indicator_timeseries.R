@@ -1,108 +1,93 @@
-## Purpose: To create a master .csv file of Tanner crab ecosystem(?) indicators for 
+## Purpose: To create a master .csv file of Tanner crab ecosystem indicators for 
 ##          R Markdown
 
 
 # ## Load packages
-# library(tidyverse)
+library(tidyverse)
 # # library(corrplot)
 # # library(cowplot)
 # # library(mgcv)
 
 
+## Set data directory
+data_dir <- "Y:/KOD_Research/Hennessey/Tanner_ESP/data/"
+
 ## Read in indicator time series
 # Chlorophyll-a concentration
-# chla <- read_csv("./outputs/chla.csv") # Contributor: Matt Callahan
+chla <- read.csv("./outputs/chla_concentration.csv") # Contributor: Matt Callahan
 
-# Wind?
-# Aleutian Low?
-# Summer surface temperature?
+# -- Wind? northeasterly favors larval advection...
 
 
-# Mean summer bottom temperature, summer cold pool extent
-env <- read_csv("./outputs/temp_coldpool.csv")
+# Mean summer bottom temperature, summer cold pool extent, 
+# mean summer surface temperature, Aleutian Low
+env <- read.csv("./outputs/temp_coldpool_AL.csv")
 
 # Summer juvenile Tanner temperature occupancy
-occ <- read_csv("./outputs/tanner_temp_occupied.csv")
+occ <- read.csv("./outputs/tanner_temp_occupied.csv")
 
-# DFA - temperature? (^^above 3)
+# DFA - temperature
+dfa_temp <- read.csv("./outputs/juv_temp_dfa_trend.csv") %>%
+            select(year, dfa_temp)
 
-# # Predator density?
-# pred <- read_csv("./outputs/benthic_predator_density.csv")
+# Predator density
+pred <- read.csv("./outputs/benthic_predator_density.csv")
 
 # Daily summer pacific cod consumption of Tanner crab 
-pcod <- read_csv("./data/EBS_codcrab_sum.csv", show_col_types = FALSE) # Contributor: Kerim Aydin
-
-# DFA - predation?
-
+pcod <- read.csv(paste0(data_dir, "pcod_consumption.csv")) # Contributor: Kerim Aydin
 
 # Summer juvenile Tanner disease prevalence
-bcs <- read_csv("./outputs/bcs_prevalence.csv")
+bcd <- read.csv("./outputs/bcd_prevalence.csv") %>%
+       select(YEAR, SM_PREVALENCE) %>%
+       rename(year = YEAR,
+              bcd_prevalence = SM_PREVALENCE)
 
-# Juvenile cohort progression? or recruitment propagation index?
+# -- Juvenile cohort progression? or recruitment propagation index?
 
 
-# # Summer benthic invertebrate density
-# invert <- read_csv("./outputs/benthic_invert_density.csv")
+# Summer benthic invertebrate density
+prey <- read.csv("./outputs/benthic_invert_density.csv")
 
-# Female size at maturity?
-# Female clutch fullness?
+# Female size at maturity
+female_sam <- read.csv("./outputs/female_SAM.csv")
+  
+# Female clutch fullness
+female_clutch <- read.csv("./outputs/clutch_fullness.csv")
 
 # Annual Tanner size at terminal molt
-size <- read_csv("./outputs/male_term_molt.csv") # Contributor: Jon Richar
-
+male_sam <- read.csv("./outputs/male_term_molt.csv") %>% # Contributor: Jon Richar
+            select(Year, SAM_pop) %>%
+            rename(year = Year,
+                   male_sam = SAM_pop)
+  
 # Summer mature male Tanner area occupied (D95)
-d95 <- read_csv("./outputs/tanner_area_occupied.csv")
+d95 <- read.csv("./outputs/tanner_area_occupied.csv") %>%
+       select(YEAR, mature_male) %>%
+       rename(year = YEAR, 
+              matmale_d95 = mature_male)
 
 # Summer mature male tanner centroid of abundance
-cod <- read_csv("./outputs/tanner_centroid_abundance.csv")
+cod <- read.csv("./outputs/tanner_centroid_abundance.csv") %>%
+       select(YEAR, LAT_COD_mature_male, LON_COD_mature_male) %>%
+       rename(year = YEAR,
+              matmale_cod_lat = LAT_COD_mature_male,
+              matmale_cod_lon = LON_COD_mature_male)
 
-# Fraction of stock in BB?
+# Fraction of stock in BB
+frac_bb <- read.csv("./outputs/fraction_bb.csv")
 
-# DFA - male spatial? (^^above 3)
-
-
-# Snow/Tanner spatial overlap?
-
-
-
-
-
+# -- DFA - male spatial? (^^above 3)
+# -- Snow/Tanner spatial overlap?
 
 
-# combine indices and save output
-eco_ind <- invert %>%
-           select(YEAR, Total_Benthic) %>%
-           rename(Summer_Benthic_Invertebrate_Density_SEBS_Tanner_Survey = Total_Benthic) %>%
-           full_join(env %>%
-                       select(YEAR, cp_extent, summer_bt) %>%
-                       rename(Summer_Cold_Pool_SEBS_Tanner_Survey=cp_extent, Summer_Temperature_Bottom_Tanner_Survey=summer_bt)) %>%
-           full_join(d95 %>%
-                       select(YEAR, mature_male) %>%
-                       rename(Summer_Tanner_Male_Area_Occupied_SEBS_Survey=mature_male)) %>%
-           full_join(bcs %>%
-                       select(YEAR, Immature) %>%
-                       rename(Summer_Tanner_Juvenile_Disease_Prevalence=Immature)) %>%
-           full_join(cod %>%
-                       select(YEAR, Lon_COD_mature_male) %>%
-                       rename(Summer_Tanner_Male_Center_Distribution_SEBS_Survey = Lon_COD_mature_male)) %>%
-           full_join(occ %>%
-                       select(YEAR, Immature) %>%
-                       rename(Summer_Tanner_Juvenile_Temperature_Occupancy = Immature)) %>%
-           full_join(size %>%
-                       select(Year, SAM_pop) %>%
-                       rename(Annual_Tanner_Size_Terminal_Molt_Model = SAM_pop,
-                           YEAR = Year)) %>%
-           full_join(chla) %>%
-           full_join(pcod %>%
-                       select(YEAR, Pcod) %>%
-                       rename(Summer_Pacific_Cod_Density_Tanner_Survey = Pcod)) %>%
-           full_join(pcod %>%
-                       select(YEAR, bairdi_extrap) %>%
-                       rename(Summer_Pacific_Cod_Consumption_Juvenile_Tanner = bairdi_extrap)) %>%
-           rename(year = YEAR) %>%
-           filter(year >= 1982) %>%
-           arrange(year)
-write_csv(eco_ind, "./data/tanner_eco_indicators.csv")
+
+
+
+## Combine indices and save output
+indicators <- list(chla, env, occ, dfa_temp, pred, pcod, bcd, prey, female_sam,
+                   female_clutch, male_sam, d95, cod, frac_bb) %>%
+              purrr::reduce(., merge, by = c('year'), all = T) %>%
+              write_csv("./data/BAS_indicators.csv")
 
 
 
