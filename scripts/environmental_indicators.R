@@ -120,9 +120,11 @@ mean_AL %>%
   geom_line() +
   labs(y = "ALPI", x = "Year") +
   geom_hline(aes(yintercept = mean(mean_AL, na.rm = TRUE)), linetype = 5) +
+  geom_hline(aes(yintercept = mean(mean_AL, na.rm = TRUE) - sd(mean_AL, na.rm = TRUE)), color = "green4") +
+  geom_hline(aes(yintercept = mean(mean_AL, na.rm = TRUE) + sd(mean_AL, na.rm = TRUE)), color = "green4") +
   xlim(min(years), max(years)) +
   theme_bw()
-ggsave(paste0(fig_dir, "ALPI.png"), height = 4, width = 6)
+ggsave(paste0(fig_dir, "ALPI.png"), height = 2, width = 6)
 
 
 
