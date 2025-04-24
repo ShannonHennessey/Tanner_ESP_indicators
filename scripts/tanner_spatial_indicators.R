@@ -37,6 +37,24 @@ mat_size <- get_male_maturity(species = "TANNER",
                                         DISTRICT == "W166" & is.na(MAT_SIZE) ~ 99, 
                                         TRUE ~ MAT_SIZE))
 
+## Plot male Tanner size at terminal molt
+ggplot(data = mat_size %>% 
+         filter(DISTRICT == "ALL", !is.na(STD_ERR)) %>%
+         right_join(., expand.grid(YEAR = years)),
+       aes(x = YEAR, y = MAT_SIZE)) +
+  geom_point() +
+  geom_line() +
+  geom_hline(aes(yintercept = mean(MAT_SIZE, na.rm = TRUE)), linetype = 5) +
+  geom_hline(aes(yintercept = mean(MAT_SIZE, na.rm = TRUE) - sd(MAT_SIZE, na.rm = TRUE)), color = "green4") +
+  geom_hline(aes(yintercept = mean(MAT_SIZE, na.rm = TRUE) + sd(MAT_SIZE, na.rm = TRUE)), color = "green4") +
+  labs(x = "Year", y = "Male Tanner Crab Size\nat 50% Maturity (mm)") +   
+  xlim(min(years), max(years)) +
+  theme_bw() +
+  theme(legend.title = element_blank())
+
+ggsave(paste0(fig_dir, "male_SAM.png"), height = 2, width = 6)
+
+
 ## Assign maturity to specimen data; calculate CPUE
 cpue <- tanner$specimen %>% 
         left_join(., mat_size) %>%
