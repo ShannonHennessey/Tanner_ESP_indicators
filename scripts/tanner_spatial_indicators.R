@@ -79,31 +79,33 @@ COD <- cpue %>%
 
 
 # Plot latitude centroid
-lat_cod <- ggplot(data = COD %>% filter(CATEGORY == "mature_male"),
-                  aes(x = YEAR, y = LAT_COD)) +#, group = CATEGORY, color = CATEGORY)) +
-           geom_point() +
-           geom_line() +
-           geom_hline(aes(yintercept = mean(LAT_COD, na.rm = TRUE)), linetype = 5) +
-           labs(x = "Year", y = expression(paste("Mature Male Center of Abundance (", degree, "Latitude)"))) +           
-           theme_bw() +
-           theme(legend.title = element_blank())
+ggplot(data = COD %>% filter(CATEGORY == "mature_male"),
+       aes(x = YEAR, y = LAT_COD)) +#, group = CATEGORY, color = CATEGORY)) +
+  geom_point() +
+  geom_line() +
+  geom_hline(aes(yintercept = mean(LAT_COD, na.rm = TRUE)), linetype = 5) +
+  geom_hline(aes(yintercept = mean(LAT_COD, na.rm = TRUE) - sd(LAT_COD, na.rm = TRUE)), color = "green4") +
+  geom_hline(aes(yintercept = mean(LAT_COD, na.rm = TRUE) + sd(LAT_COD, na.rm = TRUE)), color = "green4") +
+  labs(x = "Year", y = "Mature Male Center of\nAbundance (Latitude)") +           
+  theme_bw() +
+  theme(legend.title = element_blank())
 
-ggsave(paste0(fig_dir, "tanner_centroid_latitude.png"), lat_cod,
-       height =  4, width = 6)
+ggsave(paste0(fig_dir, "tanner_centroid_latitude.png"), height = 2, width = 6)
 
 
 # Plot longitude centroid
-lon_cod <- ggplot(data = COD %>% filter(CATEGORY == "mature_male"),
-                  aes(x = YEAR, y = LON_COD)) +#, group = CATEGORY, color = CATEGORY)) +
-           geom_point() +
-           geom_line() +
-           geom_hline(aes(yintercept = mean(LON_COD, na.rm = TRUE)), linetype = 5) +
-           labs(x = "Year", y = expression(paste("Mature Male Center of Abundance (", degree, "Longitude)"))) +           
-           theme_bw() +
-           theme(legend.title = element_blank()) 
+ggplot(data = COD %>% filter(CATEGORY == "mature_male"),
+       aes(x = YEAR, y = LON_COD)) +#, group = CATEGORY, color = CATEGORY)) +
+  geom_point() +
+  geom_line() +
+  geom_hline(aes(yintercept = mean(LON_COD, na.rm = TRUE)), linetype = 5) +
+  geom_hline(aes(yintercept = mean(LON_COD, na.rm = TRUE) - sd(LON_COD, na.rm = TRUE)), color = "green4") +
+  geom_hline(aes(yintercept = mean(LON_COD, na.rm = TRUE) + sd(LON_COD, na.rm = TRUE)), color = "green4") +
+  labs(x = "Year", y = "Mature Male Center of\nAbundance (Longitude)") +           
+  theme_bw() +
+  theme(legend.title = element_blank())
 
-ggsave(paste0(fig_dir, "tanner_centroid_longitude.png"), lon_cod,
-       height = 4, width = 6)
+ggsave(paste0(fig_dir, "tanner_centroid_longitude.png"), height = 2, width = 6)
 
 
 # Write output for COD indicator     
@@ -161,12 +163,13 @@ ggplot(data = d95 %>% filter(CATEGORY == "mature_male"),
   geom_point() +
   geom_line() +
   geom_hline(aes(yintercept = mean(d95, na.rm = TRUE)), linetype = 5) +
-  labs(x = "Year", y = expression("Mature Male Area Occupied ("~nmi^2~")")) +
+  geom_hline(aes(yintercept = mean(d95, na.rm = TRUE) - sd(d95, na.rm = TRUE)), color = "green4") +
+  geom_hline(aes(yintercept = mean(d95, na.rm = TRUE) + sd(d95, na.rm = TRUE)), color = "green4") +
+  labs(x = "Year", y = "Mature Male Area\nOccupied (nmi2)") +
   theme_bw() +
   theme(legend.title = element_blank()) 
 
-ggsave(paste0(fig_dir, "tanner_area_occupied.png"),
-       height = 4, width = 6)
+ggsave(paste0(fig_dir, "tanner_area_occupied.png"), height = 2, width = 6)
 
 
 # Write output for D95 indicator     
@@ -249,11 +252,13 @@ cpue_bb %>%
   ggplot(aes(x = YEAR, y = fraction_bb)) +
   geom_point() +
   geom_line() +
-  labs(x = "Year", y = "Fraction of Tanner Crab Stock in Bristol Bay") +
+  labs(x = "Year", y = "Fraction of Tanner Crab\nStock in Bristol Bay") +
   geom_hline(aes(yintercept = mean(fraction_bb, na.rm = TRUE)), linetype = 5) +
+  geom_hline(aes(yintercept = mean(fraction_bb, na.rm = TRUE) - sd(fraction_bb, na.rm = TRUE)), color = "green4") +
+  geom_hline(aes(yintercept = mean(fraction_bb, na.rm = TRUE) + sd(fraction_bb, na.rm = TRUE)), color = "green4") +
   xlim(min(years), max(years)) +
   theme_bw()
-ggsave(paste0(fig_dir, "fraction_bb.png"), height = 4, width = 6)
+ggsave(paste0(fig_dir, "fraction_bb.png"), height = 2, width = 6)
 
 
 ## Save output

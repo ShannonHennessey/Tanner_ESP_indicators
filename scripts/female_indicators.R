@@ -40,11 +40,13 @@ mean_size <- female_size %>%
 ggplot(mean_size, aes(x = YEAR, y = MEAN_SIZE)) +
   geom_point() +
   geom_line() +
-  labs(x = "Year", y = "Mean Mature Female Tanner Crab Size (mm)") +
+  labs(x = "Year", y = "Mean Mature Female\nTanner Crab Size (mm)") +
   geom_hline(aes(yintercept = mean(MEAN_SIZE, na.rm = TRUE)), linetype = 5) +
+  geom_hline(aes(yintercept = mean(MEAN_SIZE, na.rm = TRUE) - sd(MEAN_SIZE, na.rm = TRUE)), color = "green4") +
+  geom_hline(aes(yintercept = mean(MEAN_SIZE, na.rm = TRUE) + sd(MEAN_SIZE, na.rm = TRUE)), color = "green4") +
   xlim(min(years), max(years)) +
   theme_bw()
-ggsave(paste0(fig_dir, "female_SAM.png"), height = 4, width = 6)
+ggsave(paste0(fig_dir, "female_SAM.png"), height = 2, width = 6)
 
 
 # Save output
@@ -100,11 +102,13 @@ clutch_dat <- full_join(primip_full_abund, primip_abund) %>%
 ggplot(clutch_dat, aes(x = YEAR, y = PROP_FULL)) +
   geom_point() +
   geom_line() +
-  labs(x = "Year", y = "Proportion Primiparous Females with Full Clutch") +
+  labs(x = "Year", y = "Proportion Primiparous\nFemales with Full Clutch") +
   geom_hline(aes(yintercept = mean(PROP_FULL, na.rm = TRUE)), linetype = 5) +
+  geom_hline(aes(yintercept = mean(PROP_FULL, na.rm = TRUE) - sd(PROP_FULL, na.rm = TRUE)), color = "green4") +
+  geom_hline(aes(yintercept = mean(PROP_FULL, na.rm = TRUE) + sd(PROP_FULL, na.rm = TRUE)), color = "green4") +
   xlim(min(years), max(years)) +
   theme_bw()
-ggsave(paste0(fig_dir, "clutch_fullness.png"), height = 4, width = 6)
+ggsave(paste0(fig_dir, "clutch_fullness.png"), height = 2, width = 6)
 
 
 # Save output

@@ -140,11 +140,13 @@ ben_pred %>%
   geom_point() +
   geom_line() +
   geom_hline(aes(yintercept = mean(total_pred, na.rm = TRUE)), linetype = 5) +
-  labs(y = "Benthic Predator CPUE (kg/km2)", x = "Year") +
+  geom_hline(aes(yintercept = mean(total_pred, na.rm = TRUE) - sd(total_pred, na.rm = TRUE)), color = "green4") +
+  geom_hline(aes(yintercept = mean(total_pred, na.rm = TRUE) + sd(total_pred, na.rm = TRUE)), color = "green4") +
+  labs(y = "Benthic Predator\nCPUE (kg/km2)", x = "Year") +
   theme_bw() +
   theme(legend.title = element_blank()) 
 ggsave(paste0(fig_dir, "benthic_predator_density.png"),
-       height = 4, width = 6)
+       height = 2, width = 6)
 
 # Plot Pacific cod
 pcod_plot <- ben_pred %>%

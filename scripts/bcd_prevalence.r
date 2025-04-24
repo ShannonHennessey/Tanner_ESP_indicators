@@ -137,20 +137,21 @@ facet_plot <- ggplot(plot_dat, aes(x = YEAR, y = PREVALENCE, group = as.factor(C
 
 
 # Just immature crab plot
-imm_plot <- ggplot(plot_dat %>% filter(CATEGORY == "SM_PREVALENCE"), 
-                   aes(x = YEAR, y = PREVALENCE)) +
-            geom_point() +
-            geom_line() +
-            scale_x_continuous(limits = c(min(years), current_year),
-                               breaks = seq(1980, current_year, 5)) +
-            geom_hline(aes(yintercept = mean(PREVALENCE, na.rm = TRUE)), linetype = 5) +
-            labs(y = "Juvenile Tanner Disease Prevalence (%)", x = "Year") +
-            theme_bw() +
-            theme(axis.title.y = element_text(size = 14),
-                  axis.text.x = element_text(size = 12), 
-                  axis.text.y = element_text(size = 12),
-                  legend.title = element_blank())
+ggplot(plot_dat %>% filter(CATEGORY == "SM_PREVALENCE"), 
+       aes(x = YEAR, y = PREVALENCE)) +
+  geom_point() +
+  geom_line() +
+  scale_x_continuous(limits = c(min(years), current_year),
+                     breaks = seq(1980, current_year, 5)) +
+  geom_hline(aes(yintercept = mean(PREVALENCE, na.rm = TRUE)), linetype = 5) +
+  geom_hline(aes(yintercept = mean(PREVALENCE, na.rm = TRUE) - sd(PREVALENCE, na.rm = TRUE)), color = "green4") +
+  geom_hline(aes(yintercept = mean(PREVALENCE, na.rm = TRUE) + sd(PREVALENCE, na.rm = TRUE)), color = "green4") +
+  labs(y = "Juvenile Disease\nPrevalence (%)", x = "Year") +
+  theme_bw() +
+  theme(axis.title.y = element_text(size = 14),
+        axis.text.x = element_text(size = 12), 
+        axis.text.y = element_text(size = 12),
+        legend.title = element_blank())
   
-ggsave(paste0(fig_dir, "bcd_imm_prev.png"), imm_plot,
-       height = 4, width = 6)
+ggsave(paste0(fig_dir, "bcd_imm_prev.png"), height = 2, width = 6)
 

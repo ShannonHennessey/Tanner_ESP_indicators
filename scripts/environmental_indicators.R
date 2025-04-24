@@ -45,9 +45,11 @@ mean_bt %>%
   geom_line() +
   labs(y = "Bottom Temperature (C)", x = "Year") +
   geom_hline(aes(yintercept = mean(summer_bt, na.rm = TRUE)), linetype = 5) +
+  geom_hline(aes(yintercept = mean(summer_bt, na.rm = TRUE) - sd(summer_bt, na.rm = TRUE)), color = "green4") +
+  geom_hline(aes(yintercept = mean(summer_bt, na.rm = TRUE) + sd(summer_bt, na.rm = TRUE)), color = "green4") +
   xlim(min(years), max(years)) +
   theme_bw()
-ggsave(paste0(fig_dir, "bottom_temp.png"), height = 4, width = 6)
+ggsave(paste0(fig_dir, "bottom_temp.png"), height = 2, width = 6)
 
 
 
@@ -69,9 +71,11 @@ cp_extent %>%
   geom_line() +
   labs(y = "Cold Pool Extent (nmi2)", x = "Year") +
   geom_hline(aes(yintercept = mean(cp_extent, na.rm = TRUE)), linetype = 5) +
+  geom_hline(aes(yintercept = mean(cp_extent, na.rm = TRUE) - sd(cp_extent, na.rm = TRUE)), color = "green4") +
+  geom_hline(aes(yintercept = mean(cp_extent, na.rm = TRUE) + sd(cp_extent, na.rm = TRUE)), color = "green4") +
   xlim(min(years), max(years)) +
   theme_bw()
-ggsave(paste0(fig_dir, "coldpool_extent.png"), height = 4, width = 6)
+ggsave(paste0(fig_dir, "coldpool_extent.png"), height = 2, width = 6)
 
 
 
@@ -91,9 +95,11 @@ mean_st %>%
   geom_line() +
   labs(y = "Surface Temperature (C)", x = "Year") +
   geom_hline(aes(yintercept = mean(summer_st, na.rm = TRUE)), linetype = 5) +
+  geom_hline(aes(yintercept = mean(summer_st, na.rm = TRUE) - sd(summer_st, na.rm = TRUE)), color = "green4") +
+  geom_hline(aes(yintercept = mean(summer_st, na.rm = TRUE) + sd(summer_st, na.rm = TRUE)), color = "green4") +
   xlim(min(years), max(years)) +
   theme_bw()
-ggsave(paste0(fig_dir, "surface_temp.png"), height = 4, width = 6)
+ggsave(paste0(fig_dir, "surface_temp.png"), height = 2, width = 6)
 
 
 

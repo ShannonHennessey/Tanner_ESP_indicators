@@ -135,11 +135,13 @@ ben_prey %>%
   geom_point() +
   geom_line() +
   geom_hline(aes(yintercept = mean(CPUE_KGKM2, na.rm = TRUE)), linetype = 5) +
-  labs(y = "Benthic Invertebrate Prey CPUE (kg/km2)", x = "Year") +
+  geom_hline(aes(yintercept = mean(CPUE_KGKM2, na.rm = TRUE) - sd(CPUE_KGKM2, na.rm = TRUE)), color = "green4") +
+  geom_hline(aes(yintercept = mean(CPUE_KGKM2, na.rm = TRUE) + sd(CPUE_KGKM2, na.rm = TRUE)), color = "green4") +
+  labs(y = "Benthic Invertebrate\nPrey CPUE (kg/km2)", x = "Year") +
   theme_bw() +
   theme(legend.title = element_blank()) 
 ggsave(paste0(fig_dir, "benthic_prey_density.png"),
-       height = 4, width = 6)
+       height = 2, width = 6)
 
 ## Write .csv output of benthic prey density
 ben_prey %>%

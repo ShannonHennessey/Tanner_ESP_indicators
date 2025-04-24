@@ -72,16 +72,17 @@ temp_occ <- cpue %>%
   
 
 ## Plot
-temp_plot <- ggplot(data = temp_occ,
-                    aes(x = YEAR, y = TEMP_OCC)) +
-             geom_point() +
-             geom_line() +
-             geom_hline(aes(yintercept = mean(TEMP_OCC, na.rm = TRUE)), linetype = 5) +
-             labs(x = "Year", y = expression(paste("Temperature Occupied (", degree, "C)"))) +             
-             theme_bw() +
-             theme(legend.title = element_blank()) 
-ggsave(paste0(fig_dir, "tanner_temp_occupied.png"), temp_plot,
-       height = 4, width = 6)
+ggplot(data = temp_occ,
+       aes(x = YEAR, y = TEMP_OCC)) +
+  geom_point() +
+  geom_line() +
+  geom_hline(aes(yintercept = mean(TEMP_OCC, na.rm = TRUE)), linetype = 5) +
+  geom_hline(aes(yintercept = mean(TEMP_OCC, na.rm = TRUE) - sd(TEMP_OCC, na.rm = TRUE)), color = "green4") +
+  geom_hline(aes(yintercept = mean(TEMP_OCC, na.rm = TRUE) + sd(TEMP_OCC, na.rm = TRUE)), color = "green4") +
+  labs(x = "Year", y = "Temperature\nOccupied (C)") + #expression(paste("Temperature Occupied ", "(", degree, "C)"))            
+  theme_bw() +
+  theme(legend.title = element_blank()) 
+ggsave(paste0(fig_dir, "tanner_temp_occupied.png"), height = 2, width = 6)
 
 
 ## Write output for Temp Occupancy indicator     

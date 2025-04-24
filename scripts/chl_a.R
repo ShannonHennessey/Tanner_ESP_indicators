@@ -47,7 +47,7 @@ tidy_chl <- function(file) {
 # Append all files
 datalist = list()
 
-for(i in years){
+for(i in 1998:max(years)){
   dat <- tidy_chl(paste0(data_dir, "nc/occ8_", i ,".nc"))
   datalist[[i]] <- dat 
 }
@@ -71,10 +71,12 @@ occ_esp %>%
   geom_line(aes(x = year, y = mean_chla)) +
   geom_point(aes(x = year, y = mean_chla)) +
   geom_hline(aes(yintercept = mean(mean_chla, na.rm = TRUE)), linetype = 5) +
-  labs(x = "Year", y = "Mean Chlorophyll-a Concentration (µg/L)") +
+  geom_hline(aes(yintercept = mean(mean_chla, na.rm = TRUE) - sd(mean_chla, na.rm = TRUE)), color = "green4") +
+  geom_hline(aes(yintercept = mean(mean_chla, na.rm = TRUE) + sd(mean_chla, na.rm = TRUE)), color = "green4") +
+  labs(x = "Year", y = "Mean Chlorophyll-a\nConcentration (µg/L)") +
   xlim(min(years), max(years)) +
   theme_bw() 
-ggsave(paste0(fig_dir, "chla_concentration.png"), height = 6, width = 10)
+ggsave(paste0(fig_dir, "chla_concentration.png"), height = 2, width = 6)
 
 
 
