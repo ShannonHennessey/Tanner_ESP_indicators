@@ -25,6 +25,26 @@ library(ENMTools)
 source("./scripts/setup.R")
 
 
+## read in and plot pcod consumption
+# Daily summer pacific cod consumption of Tanner crab 
+pcod <- read.csv(paste0(data_dir, "pcod_consumption.csv")) 
+
+ggplot(pcod, aes(x = year, y = pcod_consumption)) +
+  geom_point() +
+  geom_line() +
+  geom_hline(aes(yintercept = mean(pcod_consumption, na.rm = TRUE)), linetype = 5) +
+  geom_hline(aes(yintercept = mean(pcod_consumption, na.rm = TRUE) - sd(pcod_consumption, na.rm = TRUE)), color = "green4") +
+  geom_hline(aes(yintercept = mean(pcod_consumption, na.rm = TRUE) + sd(pcod_consumption, na.rm = TRUE)), color = "green4") +
+  labs(y = "Pacific Cod\nConsumption (mt/d)", x = "Year") +
+  xlim(min(years), max(years)) +
+  theme_bw() +
+  theme(legend.title = element_blank()) 
+ggsave(paste0(fig_dir, "pcod_consumption.png"), height = 2, width = 6)
+
+
+
+
+
 ## Function to calculate Hellinger's distance
 norm_vec <- function(x) sqrt(sum(x^2))
 
@@ -143,6 +163,7 @@ ben_pred %>%
   geom_hline(aes(yintercept = mean(total_pred, na.rm = TRUE) - sd(total_pred, na.rm = TRUE)), color = "green4") +
   geom_hline(aes(yintercept = mean(total_pred, na.rm = TRUE) + sd(total_pred, na.rm = TRUE)), color = "green4") +
   labs(y = "Benthic Predator\nCPUE (kg/km2)", x = "Year") +
+  xlim(min(years), max(years)) +
   theme_bw() +
   theme(legend.title = element_blank()) 
 ggsave(paste0(fig_dir, "benthic_predator_density.png"),
