@@ -130,7 +130,8 @@ ggsave(paste0(fig_dir, "benthic_prey_facet.png"), guild_facet,
 
 
 ben_prey %>%
-  filter(GUILD == "total_invert") %>%
+  filter(GUILD == "total_invert",
+         YEAR >= 1988) %>%
   ggplot(aes(x = YEAR, y = CPUE_KGKM2)) +
   geom_point() +
   geom_line() +
@@ -147,6 +148,7 @@ ggsave(paste0(fig_dir, "benthic_prey_density.png"),
 ben_prey %>%
   pivot_wider(names_from = GUILD, values_from = CPUE_KGKM2) %>%
   rename(year = YEAR) %>%
+  filter(year >= 1988) %>%
   select(year, total_invert) %>%
   write_csv("./outputs/benthic_invert_density.csv")
 
