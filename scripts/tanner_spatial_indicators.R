@@ -57,6 +57,7 @@ ggsave(paste0(fig_dir, "male_SAM.png"), height = 2, width = 6)
 
 ## Assign maturity to specimen data; calculate CPUE
 cpue <- tanner$specimen %>% 
+        mutate(DISTRICT = "ALL") %>%
         left_join(., mat_size) %>%
         mutate(CATEGORY = case_when((SEX == 1 & SIZE >= MAT_SIZE) ~ "mature_male",
                                     (SEX == 1 & SIZE < MAT_SIZE) ~ "immature_male",
@@ -87,7 +88,8 @@ n_haul <- tanner$haul %>%
 
 # Calculate center of abundance
 COD <- cpue %>%
-       filter(!STATION_ID %in% corners) %>% # exclude corner stations
+       filter(!STATION_ID %in% corners, # exclude corner stations
+              YEAR >= 1988) %>% # truncate spatial indicators to >= 1988
        group_by(YEAR, CATEGORY) %>%
        summarise(LAT_COD = weighted.mean(LATITUDE, w = CPUE),
                  LON_COD = weighted.mean(LONGITUDE, w = CPUE)) %>%
@@ -155,7 +157,8 @@ f_d95_est <- function(x){
 
 # Estimate d95
 d95 <- cpue %>%
-       filter(!STATION_ID %in% corners) %>% # exclude corner stations
+       filter(!STATION_ID %in% corners, # exclude corner stations
+              YEAR >= 1988) %>% 
        nest(data = c(-YEAR, -CATEGORY)) %>%
        mutate(d95 = purrr::map_dbl(data, f_d95_est)) %>% #apply d95 function to each element 
        unnest(cols = c(data)) %>%
@@ -183,7 +186,7 @@ ggplot(data = d95 %>% filter(CATEGORY == "mature_male"),
   geom_hline(aes(yintercept = mean(d95, na.rm = TRUE)), linetype = 5) +
   geom_hline(aes(yintercept = mean(d95, na.rm = TRUE) - sd(d95, na.rm = TRUE)), color = "green4") +
   geom_hline(aes(yintercept = mean(d95, na.rm = TRUE) + sd(d95, na.rm = TRUE)), color = "green4") +
-  labs(x = "Year", y = "Mature Male Area\nOccupied (nmi2)") +
+  labs(x = "Year", y = expression("Mature Male Area Occupied ("~nmi^2~")")) +
   theme_bw() +
   theme(legend.title = element_blank()) 
 
@@ -267,6 +270,7 @@ cpue_bb <- calc_cpue(crab_data = tanner,
 
 # Plot
 cpue_bb %>%
+  filter(YEAR >= 1988) %>%
   ggplot(aes(x = YEAR, y = fraction_bb)) +
   geom_point() +
   geom_line() +
@@ -286,4 +290,21 @@ cpue_bb %>%
   write_csv("./outputs/fraction_bb.csv")
 
 
+
+cpue2 <- cpue %>% left_join(., tanner$haul) %>% filter(CPUE > 0)
+
+ggplot(data = cpue2) +
+  geom_histogram(stat = "bin", position = "identity", aes(x = GEAR_TEMPERATURE)) +
+  # geom_line() +
+  # labs(x = "Year", y = expression("Area Occupied ("~nmi^2~")")) +
+  theme_bw() +
+  theme(legend.title = element_blank()) +
+  facet_wrap(~CATEGORY, nrow = 3)
+
+
+cpue3 <- cpue2 %>% 
+        group_by(CATEGORY) %>% 
+        summarise(QUANT_lower = weighted.quantile(GEAR_TEMPERATURE, CPUE, 0.025), 
+                  MEAN = weighted.mean(GEAR_TEMPERATURE, CPUE, na.rm = TRUE), 
+                  QUANT_upper = weighted.quantile(GEAR_TEMPERATURE, CPUE, 0.975))
 

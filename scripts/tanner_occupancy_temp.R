@@ -31,6 +31,7 @@ mat_size <- get_male_maturity(species = "TANNER",
 ## Compute station-level CPUE by size-sex category
 # Assign maturity to specimen data; calculate CPUE
 cpue <- tanner$specimen %>% 
+        mutate(DISTRICT = "ALL") %>%
         left_join(., mat_size) %>%
         mutate(CATEGORY = case_when((SEX == 1 & SIZE >= MAT_SIZE) ~ "mature_male",
                                     (SEX == 1 & SIZE < MAT_SIZE) ~ "immature_male",
