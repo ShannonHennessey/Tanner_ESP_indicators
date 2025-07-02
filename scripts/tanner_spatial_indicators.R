@@ -14,6 +14,8 @@
 ##    - total EBS, or just E166??
 ##    - not sure how to do stratification...can I just do station-level CPUE fraction?
 ##    - BB management district vs. BB proper?
+##
+## - Limit to just shell 2??
 
 
 ## Read in setup
@@ -28,14 +30,13 @@ mat_size <- get_male_maturity(species = "TANNER",
             select(-c("A_EST", "A_SE")) %>%
             rename(MAT_SIZE = B_EST, 
                    STD_ERR = B_SE) %>%
-            right_join(., expand_grid(YEAR = years,
+            right_join(., expand_grid(YEAR = 1990:current_year,
                                       SPECIES = "TANNER", 
                                       REGION = "EBS",
                                       DISTRICT = c("ALL", "E166", "W166"))) %>%
-            mutate(MAT_SIZE = case_when(DISTRICT == "ALL" & is.na(MAT_SIZE) ~ 103.5, 
-                                        DISTRICT == "E166" & is.na(MAT_SIZE) ~ 110, 
-                                        DISTRICT == "W166" & is.na(MAT_SIZE) ~ 99, 
-                                        TRUE ~ MAT_SIZE))
+            group_by(DISTRICT) %>%
+            mutate(MAT_SIZE = ifelse(is.na(MAT_SIZE), mean(MAT_SIZE, na.rm = TRUE), MAT_SIZE)) %>%
+            arrange(DISTRICT, YEAR)
 
 ## Plot male Tanner size at terminal molt
 ggplot(data = mat_size %>% 
