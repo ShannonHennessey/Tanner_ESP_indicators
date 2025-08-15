@@ -14,6 +14,9 @@
 ##    - total EBS, or just E166??
 ##    - not sure how to do stratification...can I just do station-level CPUE fraction?
 ##    - BB management district vs. BB proper?
+## - COD - just longitude to reflect E/W fishery, N/S not strong correlation with bottom temp
+##   or cold pool, will eventually develop a snow/Tanner spatial overlap metric to try and 
+##   get at that mechanism...
 ##
 ## - Limit to just shell 2??
 
@@ -22,21 +25,21 @@
 source("./scripts/setup.R")
 
 
-## Pull size at 50% probability of terminal molt
-# Assign static mean cutline to missing years:
-# 103.5mm population, 110mm E166, 99mm W166
-mat_size <- get_male_maturity(species = "TANNER", 
-                              region = "EBS")$model_parameters %>% 
-            select(-c("A_EST", "A_SE")) %>%
-            rename(MAT_SIZE = B_EST, 
-                   STD_ERR = B_SE) %>%
-            right_join(., expand_grid(YEAR = 1990:current_year,
-                                      SPECIES = "TANNER", 
-                                      REGION = "EBS",
-                                      DISTRICT = c("ALL", "E166", "W166"))) %>%
-            group_by(DISTRICT) %>%
-            mutate(MAT_SIZE = ifelse(is.na(MAT_SIZE), mean(MAT_SIZE, na.rm = TRUE), MAT_SIZE)) %>%
-            arrange(DISTRICT, YEAR)
+# ## Pull size at 50% probability of terminal molt
+# # Assign static mean cutline to missing years:
+# # 103.5mm population, 110mm E166, 99mm W166
+# mat_size <- get_male_maturity(species = "TANNER", 
+#                               region = "EBS")$model_parameters %>% 
+#             select(-c("A_EST", "A_SE")) %>%
+#             rename(MAT_SIZE = B_EST, 
+#                    STD_ERR = B_SE) %>%
+#             right_join(., expand_grid(YEAR = 1990:current_year,
+#                                       SPECIES = "TANNER", 
+#                                       REGION = "EBS",
+#                                       DISTRICT = c("ALL", "E166", "W166"))) %>%
+#             group_by(DISTRICT) %>%
+#             mutate(MAT_SIZE = ifelse(is.na(MAT_SIZE), mean(MAT_SIZE, na.rm = TRUE), MAT_SIZE)) %>%
+#             arrange(DISTRICT, YEAR)
 
 ## Plot male Tanner size at terminal molt
 ggplot(data = mat_size %>% 
@@ -166,7 +169,7 @@ d95 <- cpue %>%
        group_by(YEAR, CATEGORY) %>%
        summarise(CPUE = sum(CPUE), # add a column for total cpue of each group in each year
                  d95 = mean(d95)) %>% # take 'mean' just to get one value (they are all the same)
-       right_join(., expand_grid(YEAR = years,
+       right_join(., expand_grid(YEAR = 1988:current_year,
                                  CATEGORY = unique(cpue$CATEGORY))) %>%
        arrange(YEAR)
 
