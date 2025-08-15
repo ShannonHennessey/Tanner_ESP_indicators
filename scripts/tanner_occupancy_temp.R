@@ -10,24 +10,6 @@
 source("./scripts/setup.R")
 
 
-## Pull size at 50% probability of terminal molt
-# Assign static mean cutline to missing years:
-# 103.5mm population, 110mm E166, 99mm W166
-mat_size <- get_male_maturity(species = "TANNER", 
-                              region = "EBS")$model_parameters %>% 
-            select(-c("A_EST", "A_SE")) %>%
-            rename(MAT_SIZE = B_EST, 
-                   STD_ERR = B_SE) %>%
-            right_join(., expand_grid(YEAR = years,
-                                      SPECIES = "TANNER", 
-                                      REGION = "EBS",
-                                      DISTRICT = c("ALL", "E166", "W166"))) %>%
-            mutate(MAT_SIZE = case_when(DISTRICT == "ALL" & is.na(MAT_SIZE) ~ 103.5, 
-                                        DISTRICT == "E166" & is.na(MAT_SIZE) ~ 110, 
-                                        DISTRICT == "W166" & is.na(MAT_SIZE) ~ 99, 
-                                        TRUE ~ MAT_SIZE))
-
-
 ## Compute station-level CPUE by size-sex category
 # Assign maturity to specimen data; calculate CPUE
 cpue <- tanner$specimen %>% 
