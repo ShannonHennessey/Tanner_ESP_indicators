@@ -18,6 +18,13 @@
 ## additional tests: DFA's, GAM's, boosted regression trees, test female only models, 
 ## clean up BAS script and figures 
 ##
+## Indicators that can't be updated real-time:
+## - Chl-a
+## - Cod consumption
+## - Benthic invert density
+## - Benthic predator density
+## - 
+##
 ##
 ## BAS RESPONSE VARIABLE
 ## notes ----
@@ -29,6 +36,7 @@
 
 ## Load packages
 library(tidyverse)
+library(crabpack)
 library(ggridges)
 
 require(corrplot)
@@ -41,6 +49,7 @@ require(gbm)
 
 ## Set data directory
 data_dir <- "Y:/KOD_Research/Hennessey/Tanner_ESP/data/"
+fig_dir <- "Y:/KOD_Research/Hennessey/Tanner_ESP/figures/BAS/"
 
 
 ## Set years
@@ -84,30 +93,19 @@ write.csv(response, file = ("./outputs/BAS_response.csv"), row.names=FALSE)
 ## Pull indicator data
 indicators <- read.csv("./data/BAS_indicators.csv")
 
+## Join indicator and response data
+dat_tanner <- indicators %>% 
+              left_join(response)
 
 
-#=============================================================
-#### Define Directory Structure ####
-# wd <- getwd()
-# 
-# dir.data <- file.path(wd,"Data")
-# dir.output <- file.path(wd,"Output")
-# dir.figs <- file.path(wd, "Figs")
 #=============================================================
 #### Control Section ####
-
 fit <- TRUE
 offset <- 0
 
 #Define Model Name
 model <- "BAS_May_2025" # May 2025 Tanner Crab ESP
 
-
-# #Update location references for figs and outputs
-# dir.output <- file.path(dir.output, model)
-# dir.create(dir.output, recursive=TRUE)
-# dir.figs <- file.path(dir.figs, model)
-# dir.create(dir.figs, recursive=TRUE)
 
 # For Data
 if(model == "BAS_May_2025"){
@@ -127,7 +125,8 @@ do.initPlot <- TRUE
 # Remove Correlated Covariates:
 # rem.cor.cov <- FALSE
 
-# Plotting Fxns ========================
+
+# Plotting Fxns
 q.50 <- function(x) {return(quantile(x, probs = c(0.25, 0.75)))}
 q.95 <- function(x) {return(quantile(x, probs = c(0.025, 0.975)))}
 
@@ -136,25 +135,6 @@ q_0.975 <- function(x) {return(quantile(x, probs = 0.975))}
 
 #=============================================================
 #### MODEL RUN 1: Using design-based BT survey estimate for male recruitment as response
-
-# # Read Indicator Data and response variables 
-# dat_tanner <- read.csv("./data/BAS_indicators.csv")
-# r1_survey <- read.csv("./Output/BAS_response.csv")
-# r2_model <- read.csv("./Output/modeloutput_recruits.csv")
-
-# #Data wrangling of webservice indicator data 
-# dat_tanner %>%
-#   select(YEAR, INDICATOR_NAME, DATA_VALUE, INDICATOR_TYPE) %>%
-#   filter(INDICATOR_TYPE != "Socioeconomic") %>%
-#   select(-INDICATOR_TYPE) %>%
-#   pivot_wider(names_from="INDICATOR_NAME", values_from="DATA_VALUE") %>%
-#   #add in response variables
-#   left_join(r1_survey, by="YEAR") %>%
-#   left_join((r2_model %>% rename("YEAR"="Year")), by="YEAR") %>%
-#   rename("imm_survey_abun"="ABUNDANCE_MIL", "recruits_model_output"="Recruits") -> snowindic
-
-dat_tanner <- indicators %>% 
-              left_join(response)
 
 # Look at temporal coverage of indicators 
 dat_tanner %>%
@@ -167,7 +147,6 @@ dat_tanner %>%
 # We'll also drop any spatial distribution indicators, as these are not drivers of recruitment 
 
 
-
 # Set up lags
 variables <- tibble(indicator = c("summer_st","mean_AL","mean_chla","temp_occ",
                                   "total_pred","pcod_consumption","bcd_prevalence",  
@@ -175,17 +154,20 @@ variables <- tibble(indicator = c("summer_st","mean_AL","mean_chla","temp_occ",
                                   "male_sam","matmale_d95","matmale_cod_lon"), 
                     type = c(rep("larval", 3), rep("juvenile", 4), rep("adult", 6)), 
                     response = c(rep("recruitment", 8), rep(NA, 5)),
-                    lag = c(4,4, 2,1, 2,2, 2, 1, rep(NA, 5))) # Chl potentially lag 3, pred potentially lag 3, pcod consumption potentially 3? Temp occ not lag?
+                    lag = c(4,4, 2,1, 2,2, 2, 1, rep(NA, 5))) 
+
+iter <- "v25.3"
+
 # v7 with total pred and pcod = 3, high correlation with chl, try pred as lag 2 -- fits really well!
 # v8 now change sst and AL to lag 5 (from 4) - more "larval" -- nope, 4 seems good. Because assuming mature = 5, 1 prior = 4
 # v9, 10 try invert 3 --> 2, 1 ... not much of a different/better fit, but does help decrease correlations between variables...
 # v11 try bcd 2 --> 3, keep invert at 1: doesn't change much, I think BCD 3 is good b/c impacts smaller ones more
 # v12 now do invert 3, no keep at 1
 # v13: 4,4, 2,1, 2,2, 3, 1
-# **v14: 4,4, 2,1, 2,2, 2, 1
-# v15: 5,5, 3,1, 3,3, 3, 1 --> if remove chl, this seems to do ok...but have a lot stronger effects with slightly shorter lags
+## **v14: 4,4, 2,1, 2,2, 2, 1
+## v15: 5,5, 3,1, 3,3, 3, 1 --> if remove chl, this seems to do ok...but have a lot stronger effects with slightly shorter lags
 #                              -- does this mean we maybe have the size estimate/year wrong?? 
-# **v16: 6,6, 4,1, 4,4, 4, 1 bump most lags 1, no chl (better than 15, maybe good for long ts?)
+## **v16: 6,6, 4,1, 4,4, 4, 1 bump most lags 1, no chl (better than 15, maybe good for long ts?)
 # v17: 6,6, 6,1, 4,4, 4, 1 bump most lags 1, include chl -- not a lot of difference w/ chl lag 4, retry w/ 6 --> ok, but not really hitting the peaks
 # v18: 6,6, 2,1, 4,4, 4, 1 bump most lags 1, include chl at lag 2
 # v19: 6,6, 2,1, 2,2, 4, 1 bump only larval lags 1, include chl at lag 2 --> slightly better fit
@@ -193,9 +175,11 @@ variables <- tibble(indicator = c("summer_st","mean_AL","mean_chla","temp_occ",
 # v21: 6,6, 2,1, 2,2, 3, 1: 14 and 19 best "short" models -- see if bcd 2 does anything? not really....could keep at 3?
 # v22: 6,6, 2,1, 3,3, 3, 1: not much better
 # v23: 6,6, 2,1, 3,3, 4, 1: also fine
-# *v24: 5,5, 2,1, 3,3, 3, 1 - 15 but with chl...also fine
-# *v25: 4,4, 2,1, 2,2, 2, 1 no chl: doesn't really fit ts well, but has high inclusion probabilities...
+## *v24: 5,5, 2,1, 3,3, 3, 1 - 15 but with chl...also fine
+## *v25: 4,4, 2,1, 2,2, 2, 1 no chl: doesn't really fit ts well, but has high inclusion probabilities...
 
+## v26: 4,4, 2,1, 2,2, 2, 1, smaller response class (50-70mm) - only temp occ and chl...
+## v27: usual but rm chl and bcd
 
 # ## Assign lags for indicators - see metadata file in repo for rationales for lags
 # # - Test indicators as indicators for multiple stages? ie different lags...
@@ -284,7 +268,7 @@ variables <- tibble(indicator = c("summer_st","mean_AL","mean_chla","temp_occ",
 dat_tanner_bas <- dat_tanner %>%
                   select(-imm_survey_abund, -mean_chla) %>% #-mean_chla, -bcd_prevalence
                   pivot_longer(c(2:ncol(.)), names_to = "indicator", values_to = "value") %>%
-                  filter(year >= 1982, 
+                  filter(year >= 2000, 
                          indicator %in% variables$indicator) %>%
                   left_join(variables) %>%
                   filter(!is.na(lag)) %>%
@@ -300,7 +284,7 @@ dat_tanner_bas <- dat_tanner %>%
                   pivot_wider(names_from = "indicator", values_from = "lagged") %>%
                   left_join(response) %>% 
                   mutate(ln_abund = log(imm_survey_abund),
-                         bcd_prevalence = log(bcd_prevalence),
+                         # bcd_prevalence = log(bcd_prevalence),
                          pcod_consumption = log(pcod_consumption))
 
 
@@ -368,7 +352,8 @@ if(model == "BAS_May_2025"){
                select(-year, -ln_abund)
   
   corr.mtx <- cor(covar.mtx, use = "na.or.complete")
-  png(paste0(fig_dir, "BAS_covariate_correlation.png"), height = 12, width = 12, units = 'in', res = 300)
+  corr.mtx
+  png(paste0(fig_dir, "BAS_covariate_correlation_", iter, ".png"), height = 12, width = 12, units = 'in', res = 300)
   corrplot::corrplot(corr.mtx, method = "number")
   dev.off()
 # }
@@ -384,7 +369,7 @@ if(model == "BAS_May_2025"){
 dat.temp <- dat.fit %>% 
             select(-year) %>%
             rename("Surface Temperature" = summer_st, 
-                   "Aleutian Low" = mean_AL, 
+                   "ALBSA" = mean_AL, #Aleutian Low - Beaufort Sea Anticyclone
                    # "Chlorophyll-a Concentration" = mean_chla,
                    "Occupied Temperature" = temp_occ,
                    "Predator Density" = total_pred, 
@@ -411,7 +396,7 @@ plot(coef(bas.lm), ask = FALSE)
 plot(bas.lm, which = 4)
 
 # Plot Model Predictions vs. Observed ==============================
-pdf(paste0(fig_dir, "BAS_model_fit_v25.pdf"), height = 5, width = 10)
+pdf(paste0(fig_dir, "BAS_model_fit_", iter, ".pdf"), height = 5, width = 10)
 par(oma = c(1,1,1,1), mar = c(4,4,1,1), mfrow = c(1,2))
 pred.bas <- predict(bas.lm, estimator = "BMA")
 
@@ -480,78 +465,80 @@ par(mfrow = c(1, 2), mar = c(4,1,2,1), oma = c(0,10,1,1))
 
 plot.df <- data.frame(bas.names, inc.probs, post.mean, post.sd, low.95, up.95)
 
-g <- ggplot(filter(plot.df, bas.names!='Intercept'),
-            aes(x = bas.names, post.mean, fill = bas.names)) +
-     theme_bw() +
-     geom_errorbar(aes(ymin = post.mean - post.sd, ymax = post.mean + post.sd), width = 0.25) +
-     geom_point(pch = 21, size = 3) +
-     geom_hline(yintercept = 0, col = 'red', alpha = 0.5) +
-     ylab('Effect') +
-     xlab('Covariate') +
-     coord_flip() +
-     theme(legend.position = 'none')
-g
+g.b <- ggplot(filter(plot.df, bas.names != 'Intercept'),
+              aes(x = bas.names, post.mean, fill = 'royalblue4')) +
+       theme_bw() +
+       geom_errorbar(aes(ymin = low.95, ymax = up.95), width = 0.25) +
+       geom_point(pch = 21, fill = 'royalblue4', size = 3) +
+       geom_hline(yintercept = 0, col = 'red', alpha = 0.5) +
+       ylab('Effect') +
+       xlab('Covariate') +
+       coord_flip() +
+       theme(legend.position = 'none')
+g.b
 
-#Inclusion prob
-
-g2 <- ggplot(filter(plot.df, bas.names != 'Intercept'),
-             aes(x = bas.names, y = inc.probs, fill = bas.names)) +
-      theme_bw() +
-      geom_bar(stat = 'identity', color = 'black') +
-      ylab('Inclusion\nProbability') +
-      # coord_cartesian(ylim=c(0,1)) +
-      scale_y_continuous(limits = c(0, 1)) +
-      geom_hline(yintercept = c(0, 1)) +
-      geom_hline(yintercept = 0.5, col = 'black', linetype = 5, alpha = 0.5) +
-      theme(legend.position = 'none', axis.text.y = element_blank(), 
-            axis.title.y = element_blank()) +
-      coord_flip()
-      # scale_fill_continuous()
-g2
+# Inclusion prob
+g2.b <- ggplot(filter(plot.df, bas.names != 'Intercept'),
+               aes(x = bas.names, y = inc.probs, fill = inc.probs)) +
+        theme_bw() +
+        geom_bar(stat = 'identity', color = 'black') +
+        ylab('Inclusion\nProbability') +
+        scale_y_continuous(limits = c(0, 1)) +
+        geom_hline(yintercept = c(0, 1)) +
+        geom_hline(yintercept = 0.5, col = 'black', linetype = 5, alpha = 0.5) +
+        theme(legend.position = 'none', axis.text.y = element_blank(), 
+              axis.title.y = element_blank()) +
+        coord_flip() +
+        scale_fill_continuous_tableau()
+g2.b
 
 # Bring Figs Together ========
-g3 <- plot_grid(g, g2, nrow = 1, ncol = 2, rel_widths = c(3, 1), align = 'h')
-g3
-ggsave(file = paste0(fig_dir, "BAS_v25.png"), plot = g3, height = 5, width = 8, 
+g3.b <- plot_grid(g.b, g2.b, nrow = 1, ncol = 2, rel_widths = c(3, 1), align = 'h')
+g3.b
+ggsave(file = paste0(fig_dir, "BAS_", iter, ".png"), plot = g3.b, height = 5, width = 8, 
        units = 'in', dpi = 500)
 
 
 
 
 
-#PLOT OUTPUT WITHOUT RAINBOW ===========
-g.b <- ggplot(filter(plot.df, bas.names != 'Intercept'),
-              aes(x = bas.names, post.mean, fill = 'blue')) +
+################################################################################
+## Plot with rainbow ==========================
+g <- ggplot(filter(plot.df, bas.names!='Intercept'),
+            aes(x = bas.names, post.mean, fill = bas.names)) +
   theme_bw() +
   geom_errorbar(aes(ymin = post.mean - post.sd, ymax = post.mean + post.sd), width = 0.25) +
-  geom_point(pch = 21, fill = 'blue', size = 3) +
-  geom_hline(yintercept = 0, col = 'red', alpha=0.5) +
+  geom_point(pch = 21, size = 3) +
+  geom_hline(yintercept = 0, col = 'red', alpha = 0.5) +
   ylab('Effect') +
   xlab('Covariate') +
   coord_flip() +
-  theme(legend.position='none')
-g.b
+  theme(legend.position = 'none')
+g
 
 #Inclusion prob
 
-g2.b <-  ggplot(filter(plot.df, bas.names!='Intercept'),
-                aes(x=bas.names, y=inc.probs, fill=inc.probs)) +
+g2 <- ggplot(filter(plot.df, bas.names != 'Intercept'),
+             aes(x = bas.names, y = inc.probs, fill = bas.names)) +
   theme_bw() +
-  geom_bar(stat='identity', color='black') +
+  geom_bar(stat = 'identity', color = 'black') +
   ylab('Inclusion\nProbability') +
   # coord_cartesian(ylim=c(0,1)) +
-  scale_y_continuous(limits=c(0,1)) +
-  geom_hline(yintercept=c(0,1)) +
-  theme(legend.position='none', axis.text.y = element_blank(), 
-        axis.title.y=element_blank()) +
-  coord_flip() +
-  scale_fill_continuous_tableau()
-g2.b
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_hline(yintercept = c(0, 1)) +
+  geom_hline(yintercept = 0.5, col = 'black', linetype = 5, alpha = 0.5) +
+  theme(legend.position = 'none', axis.text.y = element_blank(), 
+        axis.title.y = element_blank()) +
+  coord_flip()
+# scale_fill_continuous()
+g2
 
 # Bring Figs Together ========
-g3.b <- plot_grid(g.b,g2.b, nrow=1, ncol=2, rel_widths=c(3,1), align='h')
-ggsave(file=file.path(dir.figs,"BAS_noRainbow.png"), plot=g3.b, height=5, width=8, units='in',
-       dpi=500)
+g3 <- plot_grid(g, g2, nrow = 1, ncol = 2, rel_widths = c(3, 1), align = 'h')
+g3
+ggsave(file = paste0(fig_dir, "BAS_", iter, ".png"), plot = g3, height = 5, width = 8, 
+       units = 'in', dpi = 500)
+
 
 
 # Exploration with Boosted Regression Trees =========================================
