@@ -16,19 +16,26 @@ data_dir <- "Y:/KOD_Research/Hennessey/Tanner_ESP/data/"
 # Chlorophyll-a concentration
 chla <- read.csv("./outputs/chla_concentration.csv") # Contributor: Matt Callahan
 
-# -- Wind? northeasterly favors larval advection...
-
+# Wind -- northeasterly favors larval advection...
+# use cross-shelf component only? Negative would be "northeasterly"
+wind <- read.csv("./outputs/wind_NCEP.csv") # Contributor: Tyler Hennon
 
 # Mean summer bottom temperature, summer cold pool extent, 
 # mean summer surface temperature, Aleutian Low
 env <- read.csv("./outputs/temp_coldpool_AL.csv")
 
+# North Pacific Index
+npi <- read.csv(paste0(data_dir, "NPI.csv"))
+
+# Sea ice extent
+ice <- read.csv(paste0(data_dir, "ice_extent.csv"))
+
 # Summer juvenile Tanner temperature occupancy
 occ <- read.csv("./outputs/tanner_temp_occupied.csv")
 
-# DFA - temperature
-dfa_temp <- read.csv("./outputs/juv_temp_dfa_trend.csv") %>%
-            select(year, dfa_temp)
+# # DFA - temperature
+# dfa_temp <- read.csv("./outputs/juv_temp_dfa_trend.csv") %>%
+#             select(year, dfa_temp)
 
 # Predator density
 pred <- read.csv("./outputs/benthic_predator_density.csv")
@@ -38,7 +45,7 @@ pcod <- read.csv(paste0(data_dir, "pcod_consumption.csv")) # Contributor: Kerim 
 
 # Summer juvenile Tanner disease prevalence
 bcd <- read.csv("./outputs/bcd_prevalence.csv") %>%
-       select(YEAR, SM_PREVALENCE) %>%
+       dplyr::select(YEAR, SM_PREVALENCE) %>%
        rename(year = YEAR,
               bcd_prevalence = SM_PREVALENCE)
 
@@ -46,29 +53,27 @@ bcd <- read.csv("./outputs/bcd_prevalence.csv") %>%
 
 
 # Summer benthic invertebrate density
-prey <- read.csv("./outputs/benthic_invert_density.csv")
+prey <- read.csv("./outputs/benthic_invert_density.csv") %>%
+        mutate(total_invert = ifelse(year >= 1988, total_invert, NA))
 
 # Female size at maturity
 female_sam <- read.csv("./outputs/female_SAM.csv")
   
 # Female clutch fullness
-female_clutch <- read.csv("./outputs/clutch_fullness.csv")
+female_clutch <- read.csv("./outputs/clutch_empty.csv")
 
 # Annual Tanner size at terminal molt
-male_sam <- read.csv("./outputs/male_term_molt.csv") %>% # Contributor: Jon Richar
-            select(Year, SAM_pop) %>%
-            rename(year = Year,
-                   male_sam = SAM_pop)
+male_sam <- read.csv("./outputs/male_term_molt.csv")  # Contributor: Jon Richar
   
 # Summer mature male Tanner area occupied (D95)
 d95 <- read.csv("./outputs/tanner_area_occupied.csv") %>%
-       select(YEAR, mature_male) %>%
+       dplyr::select(YEAR, mature_male) %>%
        rename(year = YEAR, 
               matmale_d95 = mature_male)
 
 # Summer mature male tanner centroid of abundance
 cod <- read.csv("./outputs/tanner_centroid_abundance.csv") %>%
-       select(YEAR, LAT_COD_mature_male, LON_COD_mature_male) %>%
+       dplyr::select(YEAR, LAT_COD_mature_male, LON_COD_mature_male) %>%
        rename(year = YEAR,
               matmale_cod_lat = LAT_COD_mature_male,
               matmale_cod_lon = LON_COD_mature_male)
@@ -81,12 +86,12 @@ frac_bb <- read.csv("./outputs/fraction_bb.csv")
 
 
 
-
-
 ## Combine indices and save output
-indicators <- list(chla, env, occ, dfa_temp, pred, pcod, bcd, prey, female_sam,
+indicators <- list(chla, env, npi, wind, ice, occ, #dfa_temp, 
+                   pred, pcod, bcd, prey, female_sam,
                    female_clutch, male_sam, d95, cod, frac_bb) %>%
               purrr::reduce(., merge, by = c('year'), all = T) %>%
+              filter(year >= 1975) %>%
               write_csv("./data/BAS_indicators.csv")
 
 
