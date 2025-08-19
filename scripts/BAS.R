@@ -53,7 +53,7 @@ fig_dir <- "Y:/KOD_Research/Hennessey/Tanner_ESP/figures/BAS/"
 
 
 ## Set years
-current_year <- 2024
+current_year <- 2025
 years <- 1982:current_year
 
 
@@ -91,29 +91,32 @@ write.csv(response, file = ("./outputs/BAS_response.csv"), row.names=FALSE)
 
 
 ## Pull indicator data
-indicators <- read.csv("./data/BAS_indicators.csv")
+indicators <- read.csv("./data/BAS_indicators.csv") %>%
+              mutate(total_invert = ifelse(year >= 1988, total_invert, NA))
 
 ## Join indicator and response data
 dat_tanner <- indicators %>% 
               left_join(response)
 
 
-#=============================================================
-#### Control Section ####
+
+
+#### Control Section -----------------------------------------------------------
 fit <- TRUE
 offset <- 0
 
 #Define Model Name
-model <- "BAS_May_2025" # May 2025 Tanner Crab ESP
+# model <- "BAS_May_2025" # May 2025 Tanner Crab ESP draft
+model <- "BAS_Sept_2025" # Spetember 2025 Tanner Crab ESP
 
 
 # For Data
-if(model == "BAS_May_2025"){
+if(model == "BAS_Sept_2025"){
   years <- c(1982:2019, 2021:current_year)
   n.years <- length(years)
 }
 
-if(model != "BAS_May_2025"){
+if(model != "BAS_Sept_2025"){
   years <- NULL
   n.years <- NULL
   stop(paste("WRONG model:", model))
@@ -133,13 +136,15 @@ q.95 <- function(x) {return(quantile(x, probs = c(0.025, 0.975)))}
 q_0.025 <- function(x) {return(quantile(x, probs = 0.025))}
 q_0.975 <- function(x) {return(quantile(x, probs = 0.975))}
 
-#=============================================================
-#### MODEL RUN 1: Using design-based BT survey estimate for male recruitment as response
+
+
+#### MODEL RUN 1 --------------------------------------------------------------- 
+## Using design-based BT survey estimate for male recruitment as response
 
 # Look at temporal coverage of indicators 
 dat_tanner %>%
   select(!imm_survey_abund) %>%
-  pivot_longer(c(2:19), names_to = "indicator", values_to = "value") %>%
+  pivot_longer(c(2:(ncol(dat_tanner)-1)), names_to = "indicator", values_to = "value") %>%
   ggplot(aes(year, indicator, size = value)) +
   geom_point() +
   theme_bw()
@@ -148,71 +153,51 @@ dat_tanner %>%
 
 
 # Set up lags
-variables <- tibble(indicator = c("summer_st","mean_AL","mean_chla","temp_occ",
-                                  "total_pred","pcod_consumption","bcd_prevalence",  
+variables <- tibble(indicator = c("summer_st","wind_along_shelf","wind_cross_shelf","NPI","mean_AL","ice_avg",
+                                  "mean_chla","temp_occ","total_pred","pcod_consumption","bcd_prevalence",  
                                   "total_invert","female_sam","clutch_fullness",
                                   "male_sam","matmale_d95","matmale_cod_lon"), 
-                    type = c(rep("larval", 3), rep("juvenile", 4), rep("adult", 6)), 
-                    response = c(rep("recruitment", 8), rep(NA, 5)),
-                    lag = c(4,4, 2,1, 2,2, 2, 1, rep(NA, 5))) 
+                    type = c(rep("larval", 5), rep("juvenile", 7), rep("adult", 5)), 
+                    response = c(rep("recruitment", 12), rep(NA, 5)),
+                    lag = c(5,5,5,5,5,2, 3,1,3,3,3,2, 7,7, rep(NA, 3))) %>%
+            filter(!indicator %in% c("female_sam","clutch_fullness",
+                                    "male_sam","matmale_d95","matmale_cod_lon"))
 
-iter <- "v25.3"
+iter <- "sept15"
 
-# v7 with total pred and pcod = 3, high correlation with chl, try pred as lag 2 -- fits really well!
-# v8 now change sst and AL to lag 5 (from 4) - more "larval" -- nope, 4 seems good. Because assuming mature = 5, 1 prior = 4
-# v9, 10 try invert 3 --> 2, 1 ... not much of a different/better fit, but does help decrease correlations between variables...
-# v11 try bcd 2 --> 3, keep invert at 1: doesn't change much, I think BCD 3 is good b/c impacts smaller ones more
-# v12 now do invert 3, no keep at 1
-# v13: 4,4, 2,1, 2,2, 3, 1
-## **v14: 4,4, 2,1, 2,2, 2, 1
-## v15: 5,5, 3,1, 3,3, 3, 1 --> if remove chl, this seems to do ok...but have a lot stronger effects with slightly shorter lags
-#                              -- does this mean we maybe have the size estimate/year wrong?? 
-## **v16: 6,6, 4,1, 4,4, 4, 1 bump most lags 1, no chl (better than 15, maybe good for long ts?)
-# v17: 6,6, 6,1, 4,4, 4, 1 bump most lags 1, include chl -- not a lot of difference w/ chl lag 4, retry w/ 6 --> ok, but not really hitting the peaks
-# v18: 6,6, 2,1, 4,4, 4, 1 bump most lags 1, include chl at lag 2
-# v19: 6,6, 2,1, 2,2, 4, 1 bump only larval lags 1, include chl at lag 2 --> slightly better fit
-# v20: 6,6, 2,1, 2,2, 4, 1 bump only larval lags, no chl --> nope, 16 is better...
-# v21: 6,6, 2,1, 2,2, 3, 1: 14 and 19 best "short" models -- see if bcd 2 does anything? not really....could keep at 3?
-# v22: 6,6, 2,1, 3,3, 3, 1: not much better
-# v23: 6,6, 2,1, 3,3, 4, 1: also fine
-## *v24: 5,5, 2,1, 3,3, 3, 1 - 15 but with chl...also fine
-## *v25: 4,4, 2,1, 2,2, 2, 1 no chl: doesn't really fit ts well, but has high inclusion probabilities...
 
-## v26: 4,4, 2,1, 2,2, 2, 1, smaller response class (50-70mm) - only temp occ and chl...
-## v27: usual but rm chl and bcd
+## Assign lags for indicators - see metadata file in repo for rationales for lags
+# - Test indicators as indicators for multiple stages? ie different lags...
+# - probably couldn't have them in the model multiple times, but maybe play around/iterate?
+dat_tanner_bas <- dat_tanner %>%
+                  select(-imm_survey_abund) %>% #, -mean_chla
+                  pivot_longer(c(2:ncol(.)), names_to = "indicator", values_to = "value") %>%
+                  filter(year >= 1982,
+                         indicator %in% variables$indicator) %>%
+                  left_join(variables) %>%
+                  filter(!is.na(lag)) %>%
+                  group_by(indicator) %>%
+                  nest() %>%
+                  mutate(data = purrr::map(data, function(data){
+                    n_lag <- as.numeric(unique(data$lag))
+                    x <- data %>%
+                         mutate(lagged = lag(value, n = n_lag, order_by = year))
+                    return(x)})) %>%
+                  unnest(cols = c(data)) %>%
+                  select(indicator, year, lagged) %>%
+                  pivot_wider(names_from = "indicator", values_from = "lagged") %>%
+                  left_join(response)
 
-# ## Assign lags for indicators - see metadata file in repo for rationales for lags
-# # - Test indicators as indicators for multiple stages? ie different lags...
-# # - probably couldn't have them in the model multiple times, but maybe play around/iterate?
-# dat_tanner_bas <- dat_tanner %>%
-#                   select(-imm_survey_abund) %>% #, -mean_chla
-#                   pivot_longer(c(2:ncol(.)), names_to = "indicator", values_to = "value") %>%
-#                   filter(year >= 1982, 
-#                          indicator %in% variables$indicator) %>%
-#                   left_join(variables) %>%
-#                   filter(!is.na(lag)) %>%
-#                   group_by(indicator) %>%
-#                   nest() %>%
-#                   mutate(data = purrr::map(data, function(data){
-#                     n_lag <- as.numeric(unique(data$lag))
-#                     x <- data %>% 
-#                          mutate(lagged = lag(value, n = n_lag, order_by = year))
-#                     return(x)})) %>%
-#                   unnest(cols = c(data)) %>%
-#                   select(indicator, year, lagged) %>%
-#                   pivot_wider(names_from = "indicator", values_from = "lagged") %>%
-#                   left_join(response)
-# 
-# # Plot again and look at temporal coverage with lags incorporated 
-# dat_tanner_bas %>%
-#   select(-imm_survey_abund) %>%
-#   pivot_longer(c(2:ncol(.)), names_to = "indicator", values_to = "value") %>%
-#   ggplot(aes(x = year, y = indicator, size = value)) +
-#   geom_point(na.rm = T) +
-#   theme_bw()
-# #with so many large ELH lags, we're going to lose early years in the timeseries 
-# 
-# # Plot timeseries with lagged covariates 
+# Plot again and look at temporal coverage with lags incorporated
+dat_tanner_bas %>%
+  select(-imm_survey_abund) %>%
+  pivot_longer(c(2:ncol(.)), names_to = "indicator", values_to = "value") %>%
+  ggplot(aes(x = year, y = indicator, size = value)) +
+  geom_point(na.rm = T) +
+  theme_bw()
+#with so many large ELH lags, we're going to lose early years in the timeseries
+
+# # Plot timeseries with lagged covariates
 # dat_tanner_bas %>%
 #   pivot_longer(c(2:ncol(.)), names_to = "indicator", values_to = "value") %>%
 #   ggplot(aes(year, value)) +
@@ -225,28 +210,34 @@ iter <- "v25.3"
 # hist(dat_tanner_bas$imm_survey_abund) # skew left
 # hist(dat_tanner_bas$bcd_prevalence) # skew left
 # hist(dat_tanner_bas$mean_AL)
+# hist(dat_tanner_bas$NPI)
+# hist(dat_tanner_bas$wind_along_shelf)
+# hist(dat_tanner_bas$wind_cross_shelf)
 # hist(dat_tanner_bas$mean_chla)
 # hist(dat_tanner_bas$pcod_consumption) # skew left
 # hist(dat_tanner_bas$summer_st)
+# hist(dat_tanner_bas$ice_avg)
 # hist(dat_tanner_bas$temp_occ)
 # hist(dat_tanner_bas$total_invert)
 # hist(dat_tanner_bas$total_pred)
+# hist(dat_tanner_bas$female_sam)
+# hist(dat_tanner_bas$clutch_fullness)
 # 
-# # #Determine Covariates
-# # if(model == "BAS_May_2025") {
-# #   covars <- names(dat_tanner_bas %>% select(-year, -imm_survey_abund))
-# # }
-# # 
-# # n.cov <- length(covars)
+# #Determine Covariates
+# if(model == "BAS_Sept_2025") {
+#   covars <- names(dat_tanner_bas %>% select(-year, -imm_survey_abund))
+# }
+# 
+# n.cov <- length(covars)
 # 
 # 
-# # # Calculate Log Recruitment ===================================
-# # dat_tanner_bas <- dat_tanner_bas %>% 
+# # # Calculate Log Recruitment ------------------------------------------------
+# # dat_tanner_bas <- dat_tanner_bas %>%
 # #                   mutate(ln_abund = log(imm_survey_abund),
 # #                          pcod_consumption = log(pcod_consumption),
 # #                          bcd_prevalence = log(bcd_prevalence))
 # 
-# # Log transform skewed predictors ============================
+# # Log transform skewed predictors --------------------------------------------
 # hist(log(dat_tanner_bas$pcod_consumption))
 # hist(log(dat_tanner_bas$bcd_prevalence))
 # 
@@ -256,17 +247,17 @@ iter <- "v25.3"
 # # }
 # 
 # 
-# dat_tanner_bas <- dat_tanner_bas %>% 
+# dat_tanner_bas <- dat_tanner_bas %>%
 #                   mutate(ln_abund = log(imm_survey_abund),
 #                          pcod_consumption = log(pcod_consumption),
 #                          bcd_prevalence = log(bcd_prevalence))
+# 
+# 
+# 
 
-
-
-
-## Ok after exploration, this is the final shaping: ============================
+## Final data shaping ----------------------------------------------------------
 dat_tanner_bas <- dat_tanner %>%
-                  select(-imm_survey_abund, -mean_chla) %>% #-mean_chla, -bcd_prevalence
+                  select(-imm_survey_abund, -mean_chla, -mean_AL, -NPI, -wind_cross_shelf, -ice_avg) %>% 
                   pivot_longer(c(2:ncol(.)), names_to = "indicator", values_to = "value") %>%
                   filter(year >= 2000, 
                          indicator %in% variables$indicator) %>%
@@ -283,20 +274,20 @@ dat_tanner_bas <- dat_tanner %>%
                   select(indicator, year, lagged) %>%
                   pivot_wider(names_from = "indicator", values_from = "lagged") %>%
                   left_join(response) %>% 
-                  mutate(ln_abund = log(imm_survey_abund),
-                         # bcd_prevalence = log(bcd_prevalence),
-                         pcod_consumption = log(pcod_consumption))
+                  mutate(ln_abund = log(imm_survey_abund))#,
+                  #        bcd_prevalence = log(bcd_prevalence),
+                  #        pcod_consumption = log(pcod_consumption))
 
 
 # Determine Covariates
-if(model == "BAS_May_2025") {
-  covars <- names(dat_tanner_bas %>% select(-year, -imm_survey_abund, - ln_abund))
+if(model == "BAS_Sept_2025") {
+  covars <- names(dat_tanner_bas %>% select(-year, -imm_survey_abund, -ln_abund))
 }
 
 n.cov <- length(covars)
 
 
-# Standardize Covariates ======================================
+# Standardize Covariates -------------------------------------------------------
 # Plot Covariates
 covar.list <- dat_tanner_bas %>% 
               select(-imm_survey_abund, -ln_abund) %>% 
@@ -313,7 +304,7 @@ covar.list <- dat_tanner_bas %>%
 # 
 # ggsave(paste0(fig_dir, "BAS_covar_histogram.png"), height = 8, width = 12, units = 'in')
 
-# Z-score Predictors that are bounded at zero =======================================
+# Z-score Predictors that are bounded at zero ----------------------------------
 dat.4 <- dat_tanner_bas
 c <- 1
 for(c in 1:n.cov) {
@@ -325,9 +316,8 @@ apply(dat.4, 2, mean, na.rm = TRUE)
 apply(dat.4, 2, sd, na.rm = TRUE)
 
 
-# Subset Data for Fitting =====================================
-
-if(model == "BAS_May_2025"){
+# Subset Data for Fitting ------------------------------------------------------
+if(model == "BAS_Sept_2025"){
   dat.fit <- dat.4 %>% select(-imm_survey_abund, ln_abund)
   dat.fit.list <- dat.fit %>% gather(key = 'var', value = 'value', -year)
 }
@@ -356,6 +346,9 @@ if(model == "BAS_May_2025"){
   png(paste0(fig_dir, "BAS_covariate_correlation_", iter, ".png"), height = 12, width = 12, units = 'in', res = 300)
   corrplot::corrplot(corr.mtx, method = "number")
   dev.off()
+  
+  # number of pairs greater than 0.6 correlation
+  sum((corr.mtx > 0.6 & corr.mtx < 1.0) & (corr.mtx < -0.6))
 # }
 
 # No correlations > 0.6, we'll keep them all for BAS
@@ -363,18 +356,23 @@ if(model == "BAS_May_2025"){
 # ok so remove BCD
 
 
-#Fit Models ====================================
-
+## Fit Models -------------------------------------------------------------------
 # Remove Year, rename variables 
 dat.temp <- dat.fit %>% 
             select(-year) %>%
             rename("Surface Temperature" = summer_st, 
-                   "ALBSA" = mean_AL, #Aleutian Low - Beaufort Sea Anticyclone
+                   # "ALBSA" = mean_AL, #Aleutian Low - Beaufort Sea Anticyclone
+                   # "NPI" = NPI,
+                   # "Sea Ice Extent" = ice_avg,
+                   "Along-Shelf Wind" = wind_along_shelf,
+                   # "Cross-Shelf Wind" = wind_cross_shelf,
                    # "Chlorophyll-a Concentration" = mean_chla,
                    "Occupied Temperature" = temp_occ,
                    "Predator Density" = total_pred, 
                    "Disease Prevalance" = bcd_prevalence,
                    "Benthic Prey" = total_invert,
+                   # "Female Size at Maturity" = female_sam,
+                   # "Clutch Failure" = clutch_fullness,
                    "Pacific Cod Consumption" = pcod_consumption)
 
 #Trial LM
@@ -393,9 +391,10 @@ summary(bas.lm)
 
 plot(bas.lm, which = 4, ask = FALSE, caption = "", sub.caption = "")
 plot(coef(bas.lm), ask = FALSE)
+plot(confint(coef(bas.lm, level = 0.95)))
 plot(bas.lm, which = 4)
 
-# Plot Model Predictions vs. Observed ==============================
+# Plot Model Predictions vs. Observed ------------------------------------------
 pdf(paste0(fig_dir, "BAS_model_fit_", iter, ".pdf"), height = 5, width = 10)
 par(oma = c(1,1,1,1), mar = c(4,4,1,1), mfrow = c(1,2))
 pred.bas <- predict(bas.lm, estimator = "BMA")
@@ -433,7 +432,7 @@ dev.off()
 #                     method='MCMC', MCMC.iterations=1e6, thin=10)
 
 
-# PLOT RESULTS ==================================================
+# PLOT RESULTS -----------------------------------------------------------------
 names(summary(bas.lm))
 
 inc.probs <- summary(bas.lm)[2:ncol(dat.temp), 1]
@@ -446,10 +445,13 @@ bas.names <- coef(bas.lm)$namesx
 inc.probs <- coef(bas.lm)$probne0
 post.mean <- coef(bas.lm)$postmean
 post.sd <- coef(bas.lm)$postsd
+low.95 <- confint(coef(bas.lm))[,1]
+up.95 <- confint(coef(bas.lm))[,2]
 
 # Calculate lower and upper 95% CI
-low.95 <- post.mean - 1.96*post.sd
-up.95 <- post.mean + 1.96*post.sd
+# low.95 <- post.mean - 1.96*post.sd
+# up.95 <- post.mean + 1.96*post.sd
+
 
 # confint(coef(bas.lm), level=c(0.5))
 # post.probs <- coef(bas.lm)$postprobs
@@ -492,7 +494,7 @@ g2.b <- ggplot(filter(plot.df, bas.names != 'Intercept'),
         scale_fill_continuous_tableau()
 g2.b
 
-# Bring Figs Together ========
+# Bring Figs Together ----------------------------------------------------------
 g3.b <- plot_grid(g.b, g2.b, nrow = 1, ncol = 2, rel_widths = c(3, 1), align = 'h')
 g3.b
 ggsave(file = paste0(fig_dir, "BAS_", iter, ".png"), plot = g3.b, height = 5, width = 8, 
@@ -541,7 +543,7 @@ ggsave(file = paste0(fig_dir, "BAS_", iter, ".png"), plot = g3, height = 5, widt
 
 
 
-# Exploration with Boosted Regression Trees =========================================
+# Exploration with Boosted Regression Trees ------------------------------------
 form.covars <- paste(covars, collapse=" + ")
 form <- formula(paste("ln_abund", "~",form.covars))
 
