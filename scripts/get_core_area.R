@@ -6,8 +6,8 @@
 ## - should core area be a yearly metric? (ie. time-varying??)
 
 
-## Read in setup
-source("./scripts/setup.R")
+# ## Read in setup
+# source("./scripts/setup.R")
 
 
 ## Calculate station-level CPUE
@@ -24,7 +24,7 @@ cpue50_core <- cpue %>%
                mutate(QUANTILE = ifelse(MEAN_CPUE > quantile(MEAN_CPUE, 0.50), 1, 0)) %>%
                # filter(MEAN_CPUE > quantile(MEAN_CPUE, 0.50)) %>% # 187 stations, 174 excluding corners
                ungroup() %>%
-               left_join(., stations %>% select(STATION_ID, LATITUDE, LONGITUDE))
+               left_join(., stations %>% dplyr::select(STATION_ID, LATITUDE, LONGITUDE))
 
 
 ## Plot for visual check
@@ -41,7 +41,7 @@ ggsave(paste0(fig_dir, "tanner_core_area.png"), height = 6, width = 10)
 ## Write .csv for stations in 50th percentile of avg CPUE  
 cpue50_core %>% 
   filter(MEAN_CPUE > quantile(MEAN_CPUE, 0.50)) %>%
-  select(-QUANTILE) %>%
+  dplyr::select(-QUANTILE) %>%
   write.csv("./outputs/tanner_area_cpue50.csv", row.names = FALSE)
 
 
