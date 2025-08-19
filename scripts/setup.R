@@ -32,7 +32,7 @@ tanner <- get_specimen_data(species = "TANNER",
 ## Pull size at 50% probability of terminal molt
 mat_size <- get_male_maturity(species = "TANNER", 
                               region = "EBS")$model_parameters %>% 
-            select(-c("A_EST", "A_SE")) %>%
+            dplyr::select(-c("A_EST", "A_SE")) %>%
             rename(MAT_SIZE = B_EST, 
                    STD_ERR = B_SE) %>%
             right_join(., expand_grid(YEAR = 1988:current_year,
