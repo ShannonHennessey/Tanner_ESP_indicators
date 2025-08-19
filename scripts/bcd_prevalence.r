@@ -93,9 +93,9 @@ pop_plot <- ggplot(plot_dat, aes(x = YEAR, y = PREVALENCE, group = as.factor(CAT
             geom_line(aes(colour = CATEGORY), size = 1) +
             scale_x_continuous(limits = c(min(years), current_year),
                                breaks = seq(1980, current_year, 5)) +
-            scale_color_manual(labels = c("Small prevalence", "Large prevalence", 
-                                          "Population prevalence"), 
-                               values = c("#E69F00", "#56B4E9", "#009E73")) +
+            # scale_color_manual(labels = c("Small prevalence", "Large prevalence", 
+            #                               "Population prevalence"), 
+            #                    values = c("#E69F00", "#56B4E9", "#009E73")) +
             labs(y = "Disease Prevalence (%)", x = "Year") +
             theme_bw() +
             theme(legend.text = element_text(size = 11),
