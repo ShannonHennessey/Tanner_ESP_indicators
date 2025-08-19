@@ -25,22 +25,6 @@
 source("./scripts/setup.R")
 
 
-# ## Pull size at 50% probability of terminal molt
-# # Assign static mean cutline to missing years:
-# # 103.5mm population, 110mm E166, 99mm W166
-# mat_size <- get_male_maturity(species = "TANNER", 
-#                               region = "EBS")$model_parameters %>% 
-#             select(-c("A_EST", "A_SE")) %>%
-#             rename(MAT_SIZE = B_EST, 
-#                    STD_ERR = B_SE) %>%
-#             right_join(., expand_grid(YEAR = 1990:current_year,
-#                                       SPECIES = "TANNER", 
-#                                       REGION = "EBS",
-#                                       DISTRICT = c("ALL", "E166", "W166"))) %>%
-#             group_by(DISTRICT) %>%
-#             mutate(MAT_SIZE = ifelse(is.na(MAT_SIZE), mean(MAT_SIZE, na.rm = TRUE), MAT_SIZE)) %>%
-#             arrange(DISTRICT, YEAR)
-
 ## Plot male Tanner size at terminal molt
 ggplot(data = mat_size %>% 
          filter(DISTRICT == "ALL", !is.na(STD_ERR)) %>%
@@ -58,6 +42,16 @@ ggplot(data = mat_size %>%
 
 ggsave(paste0(fig_dir, "male_SAM.png"), height = 2, width = 6)
 
+# Save male SAM
+mat_size %>% 
+  ungroup() %>%
+  # remove years that were replaced with the mean value
+  mutate(MAT_SIZE = ifelse(is.na(STD_ERR), NA, MAT_SIZE)) %>%
+  filter(DISTRICT == "ALL") %>%
+  dplyr::select(YEAR, MAT_SIZE) %>%
+  rename(year = YEAR, 
+         male_sam = MAT_SIZE) %>%
+  write.csv("./outputs/male_term_molt.csv", row.names = FALSE)
 
 ## Assign maturity to specimen data; calculate CPUE
 cpue <- tanner$specimen %>% 
