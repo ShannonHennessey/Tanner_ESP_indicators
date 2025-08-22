@@ -23,6 +23,7 @@ library(ggridges)
 
 require(corrplot)
 require(cowplot)
+library(patchwork)
 require(viridis)
 require(ggthemes)
 require(BAS)
@@ -57,6 +58,20 @@ response <- calc_bioabund(crab_data = tanner,
            arrange(YEAR) %>%
            rename(year = YEAR,
                   imm_survey_abund = ABUNDANCE)
+
+# log_response <- log_bioabund(crab_data = tanner,
+#                           species = "TANNER",
+#                           spatial_level = "region",
+#                           years = years,
+#                           sex = "male",
+#                           size_min = 70, 
+#                           size_max = 85) %>%
+#   select(YEAR, ABUNDANCE) %>%
+#   # mutate(ABUNDANCE = ABUNDANCE/1e6) %>%
+#   right_join(., expand.grid(YEAR = years)) %>%
+#   arrange(YEAR) %>%
+#   rename(year = YEAR,
+#          imm_survey_abund = ABUNDANCE)
 
 # Plot response to check
 ggplot(response, aes(x = year, y = imm_survey_abund)) +
@@ -104,7 +119,7 @@ variables <- tibble(indicator = c("summer_st","wind_along_shelf","wind_cross_she
                                     "male_sam","matmale_d95","matmale_cod_lon"))
 
 # Set iteration identifier for saving outputs
-iter <- "sept15"
+iter <- "sept14"
 
 
 ## Assign lags for indicators - see metadata file in repo for rationales for lags
@@ -231,8 +246,10 @@ covar.list <- dat_tanner_bas %>%
 
 
 # Z-score predictors that are bounded at zero
+# When predictors are z-scored, the regression coefficients represent the change in the outcome variable
+# (in standard deviations) for a one-standard-deviation change in the predictor. 
+# This allows for direct comparison of the strength/importance of different predictors.
 dat.4 <- dat_tanner_bas
-c <- 1
 for(c in 1:length(covars)) {
   dat.4[[covars[c]]] <- (dat.4[[covars[c]]] - mean(dat.4[[covars[c]]], na.rm=TRUE)) / sd(dat.4[[covars[c]]], na.rm = TRUE)
 }
@@ -259,6 +276,45 @@ dev.off()
 
 # Check number of pairs with correlation >0.6
 sum((corr.mtx > 0.6 & corr.mtx < 1.0) & (corr.mtx < -0.6))
+
+
+
+# final plot with lagged/z-scored indicators and log recruitment response
+z.ts.plot <- dat.fit %>%
+             select(-ln_abund) %>%
+             pivot_longer(c(2:(ncol(dat.fit)-1)), names_to = "indicator", values_to = "value") %>%
+             # na.omit() %>%
+             mutate(indicator = factor(indicator, 
+                                      levels = c("wind_along_shelf", "summer_st",
+                                                 "temp_occ","bcd_prevalence",
+                                                 "total_pred","pcod_consumption", 
+                                                 "total_invert")))
+
+facet_names <- list("wind_along_shelf" = "Along-shelf wind", 
+                    "summer_st" = "Summer surface temperature",
+                    "temp_occ" = "Juvenile occupancy temperature",
+                    "bcd_prevalence" = "Juvenile disease prevalence",
+                    "pcod_consumption" = "Pacific cod consumption",
+                    "total_pred" = "Benthic predator density", 
+                    "total_invert" = "Benthic invertebrate density")
+facet_labeller <- function(variable, value){
+  return(facet_names[value])
+}
+
+ggplot() +
+  geom_point(data = z.ts.plot, aes(year, value), color="blue") + 
+  geom_line(data = z.ts.plot, aes(year, value), color="blue") + 
+  geom_line(data = dat.fit %>%
+                    select(year, ln_abund), 
+            aes(year, ln_abund), color = "grey50", linetype = 6) +
+  labs(y = "Value", x = "") +
+  facet_wrap(~ indicator, scales = "free_x", labeller = facet_labeller, ncol = 2) + 
+  theme_bw() +
+  theme(panel.border = element_rect(color = "black", fill = NA),
+        panel.background = element_rect(fill = NA, color = "white"),
+        strip.background = element_blank())
+ggsave(file = paste0(fig_dir, "BAS_z_timeseries_", iter, ".png"),
+       width = 8, height = 10)
 
 
 
@@ -295,40 +351,61 @@ summary(bas.lm)
 plot(bas.lm, which = 4, ask = FALSE, caption = "", sub.caption = "")
 plot(coef(bas.lm), ask = FALSE)
 plot(confint(coef(bas.lm, level = 0.95)))
-plot(bas.lm, which = 4)
 
 
 ## Plot model predictions vs. observed -----------------------------------------
-pdf(paste0(fig_dir, "BAS_model_fit_", iter, ".pdf"), height = 5, width = 10)
-par(oma = c(1,1,1,1), mar = c(4,4,1,1), mfrow = c(1,2))
-pred.bas <- predict(bas.lm, estimator = "BMA")
+# Add CIs for observed recruitment
+ci.dat <- calc_bioabund(crab_data = tanner,
+                        species = "TANNER",
+                        spatial_level = "region",
+                        years = years,
+                        sex = "male",
+                        size_min = 70, 
+                        size_max = 85) %>%
+          select(YEAR, ABUNDANCE_CI) %>%
+          mutate(ABUNDANCE_CI = log(ABUNDANCE_CI/1e6)) %>%
+          right_join(., expand.grid(YEAR = years)) %>%
+          arrange(YEAR) %>%
+          rename(year = YEAR,
+                 ln_ci = ABUNDANCE_CI)
 
-# Omit NAs
-dat.temp.na.omit <- na.omit(dat.fit)
+plot_dat <- na.omit(dat.fit) %>% # omit NAs
+            left_join(ci.dat) %>%
+            add_column(bas_pred = predict(bas.lm, estimator = "BMA")$Ybma[,1])
 
-plot(x = dat.temp.na.omit$ln_abund, y = pred.bas$Ybma,
-     xlab = "Observed ln(Recruitment)", ylab = "Predicted ln(Recruitment)", 
-     pch = 21, bg = rgb(1,0,0,alpha = 0.5), main = "")
+p1 <- ggplot(data = plot_dat, aes(x = ln_abund, y = bas_pred)) +
+      geom_point(colour = "red", size = 3) +
+      geom_abline(slope = 1, intercept = 0, 
+                  colour = "blue", size = 1) +
+      labs(x = "Observed ln(Recruitment)", y = "Predicted ln(Recruitment)") +
+      theme_bw()
 
-# Title
-mtext(paste("Tanner Crab", model), side = 3, outer = TRUE, font = 2)
-abline(a = 0, b = 1, col = rgb(0,0,1,alpha = 0.5), lwd = 3)
 
 # Timeseries
-plot(x = dat.temp.na.omit$year, y = dat.temp.na.omit$ln_abund,
-     xlab = "Year", ylab = "ln(Recruitment)", type = 'l', 
-     col = rgb(1,0,0,alpha = 0.5), main = "")
-grid(lty = 3, col = 'dark gray')
-points(x = dat.temp.na.omit$year, y = dat.temp.na.omit$ln_abund,
-       pch = 21, bg = rgb(1,0,0,alpha = 0.5))
-lines(x = dat.temp.na.omit$year, y = pred.bas$Ybma, 
-      lwd = 3, col = rgb(0,0,1, alpha = 0.5))
-legend('topleft', legend = c("Observed", "Predicted"), 
-       lty = 1, col = c(rgb(1,0,0, alpha = 0.5), rgb(0,0,1, alpha = 0.5)),
-       bg = "white")
+plot_dat2 <- plot_dat %>% 
+             select(year, ln_abund, ln_ci, bas_pred) %>%
+             pivot_longer(cols = c("ln_abund", "bas_pred"), names_to = "model") %>%
+             mutate(ln_ci = ifelse(model == "bas_pred", NA, ln_ci),
+                    model = factor(model, levels = c("ln_abund", "bas_pred")))
 
-dev.off()
-
+p2 <- ggplot(data = plot_dat2, aes(x = year, y = value, group = model)) +
+      geom_point(data = plot_dat2 %>% filter(model == "ln_abund"),
+                 aes(colour = model), size = 3) +
+      geom_line(aes(colour = model, size = model)) +
+      # geom_ribbon(aes(x = year, ymin = value - ln_ci, ymax = value + ln_ci), 
+      #             alpha = 0.1, fill = "red") +
+      scale_color_manual(values = c("red", "blue"), 
+                         labels = c("Observed", "Predicted")) +
+      scale_size_manual(values = c(1, 1.5), 
+                        labels = c("Observed", "Predicted")) +
+      labs(x = "Year", y = "ln(Recruitment)") +
+      theme_bw() +
+      theme(legend.position = c(0.25, 0.9),
+            legend.box = "vertical",
+            legend.title = element_blank())
+  
+ggsave(file = paste0(fig_dir, "BAS_model_fit_", iter, ".png"), 
+       p1 + p2, height = 5, width = 10)
 
 
 ## Plot inclusion probabilities ------------------------------------------------
