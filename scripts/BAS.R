@@ -352,6 +352,12 @@ plot(bas.lm, which = 4, ask = FALSE, caption = "", sub.caption = "")
 plot(coef(bas.lm), ask = FALSE)
 plot(confint(coef(bas.lm, level = 0.95)))
 
+# Save model rank/posterior log odds plot
+png(paste0(fig_dir, "BAS_modelrank_", iter, ".png"),
+    width = 8, height = 6, units = 'in', res = 300)
+image(bas.lm, rotate = F, drop.always.included = TRUE)
+dev.off()
+
 
 ## Plot model predictions vs. observed -----------------------------------------
 # Add CIs for observed recruitment
