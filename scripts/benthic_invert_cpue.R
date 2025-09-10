@@ -125,8 +125,8 @@ guild_facet <- ben_prey %>%
                theme_bw() +
                theme(legend.title = element_blank()) +
                facet_wrap(~GUILD, scales = "free_y", nrow = 4)
-ggsave(paste0(fig_dir, "benthic_prey_facet.png"), guild_facet,
-       height = 8, width = 10)
+# ggsave(paste0(fig_dir, "benthic_prey_facet.png"), guild_facet,
+#        height = 8, width = 10)
 
 
 ben_prey %>%

@@ -150,8 +150,8 @@ guild_facet <- ben_pred %>%
                theme_bw() +
                theme(legend.title = element_blank()) +
                facet_wrap(~GUILD, scales = "free_y", ncol = 8)
-ggsave(paste0(fig_dir, "benthic_predator_facet.png"), guild_facet,
-       height = 3, width = 15)
+# ggsave(paste0(fig_dir, "benthic_predator_facet.png"), guild_facet,
+#        height = 3, width = 15)
 
 ben_pred %>%
   group_by(YEAR) %>%
