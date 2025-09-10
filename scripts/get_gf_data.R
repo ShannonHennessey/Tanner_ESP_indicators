@@ -10,8 +10,11 @@
 ## Load packages
 library(gapindex)
 
-# Connect to AFSC Oracle Database
+## Connect to AFSC Oracle Database
 channel <- gapindex::get_connected()
+
+## Set data directory
+data_dir <- "Y:/KOD_Research/Hennessey/Tanner_ESP/data/"
 
 
 ## Manipulate with SQL using FOSS data before bringing into R 
@@ -59,7 +62,7 @@ dat <- RODBC::sqlQuery(channel = channel,
 #* **NEED TO CHECK what units we want -- crab CPUE is in per NMI2 not KM2...
 
 
-write.csv(dat, "./data/gf_cpue_timeseries.csv", row.names = FALSE)
+write.csv(dat, paste0(data_dir, "/gf_cpue_timeseries.csv"), row.names = FALSE)
 
 
 
