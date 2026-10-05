@@ -30,6 +30,11 @@ npi <- read.csv(paste0(data_dir, "NPI.csv"))
 # Sea ice extent
 ice <- read.csv(paste0(data_dir, "ice_extent.csv"))
 
+# Sea ice retreat
+ice_retreat <- read.csv(paste0(data_dir, "iceretreat_average_allregions.csv")) %>%
+               select(-sd_iceall) %>%
+               rename(ice_retreat = avg_iceall)
+
 # Summer juvenile Tanner temperature occupancy
 occ <- read.csv("./outputs/tanner_temp_occupied.csv")
 
@@ -87,7 +92,7 @@ frac_bb <- read.csv("./outputs/fraction_bb.csv")
 
 
 ## Combine indices and save output
-indicators <- list(chla, env, npi, wind, ice, occ, #dfa_temp, 
+indicators <- list(chla, env, npi, wind, ice, ice_retreat, occ, #dfa_temp, 
                    pred, pcod, bcd, prey, female_sam,
                    female_clutch, male_sam, d95, cod, frac_bb) %>%
               purrr::reduce(., merge, by = c('year'), all = T) %>%
