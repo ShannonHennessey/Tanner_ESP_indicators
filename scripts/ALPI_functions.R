@@ -36,11 +36,11 @@
 # 
 # Access is free, but you do have to register. 
 # 
-# From the RDA website, under the data access tab, select 
-# "Get a subset".  In "Date Range" select December to March. 
+# From the RDA website, under the data access tab, select "Get a subset".  
+# In "Date Range" select December to March. 
 # For example, for 2011, select 201012 for Start Date (December) 
-# and 201103 for End Date (March).  Select NetCDF for the output 
-# format. 
+# and 201103 for End Date (March).  
+# Select NetCDF for the output format. 
 ############################################################  
 # remove all objects in the working directory 
 #rm(list=ls()) 
@@ -57,7 +57,7 @@ get.alpi.nc <- function(file) {
   # function to open a NetCDF file and parse it into dec to mar   
   # sea level pressure data, subsetted to the correct extent   
   library(RNetCDF)   
-  file.nc <- open.nc(file)   
+  file.nc <- open.nc(file2011)   
   #retrieve the relevant variables - all are arrays   
   #   *longitude is 0-355 degrees, in 5 degree increments (72 elements)   
   #   *latitude is 15-90 degrees, in 5 degree increments (16 elements)   
@@ -96,7 +96,7 @@ get.alpi.nc <- function(file) {
 } 
 
 ############################################################ 
-slp.idw <- function(month,cs=40){   
+slp.idw <- function(month, cs = 40){   
   # Function to turn point observations of monthly sea level pressure    
   # into a raster using inverse distance weighted (IDW) interpolation.   
   # This function works on a single month of data - e.g. one element   
