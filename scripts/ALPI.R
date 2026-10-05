@@ -13,11 +13,11 @@
 # Source the ALPI functions source("ALPI.r") 
 ############################################################   
 # These are the files for each year (change path as necessary) 
-file2011 <- "./data/ds010.1.20101200.20110331.nc" 
-file2012 <- "./data/ds010.1.20111200.20120331.nc" 
-file2013 <- "./data/ds010.1.20121200.20130331.nc" 
-file2014 <- "./data/ds010.1.20131200.20140331.nc" 
-file2015 <- "./data/ds010.1.20141200.20150331.nc" 
+file2011 <- "~/data/ALPI_nc/d010001.20101200.20110331.nc" 
+file2012 <- "./data/ALPI_nc/ds010.1.20111200.20120331.nc" 
+file2013 <- "./data/ALPI_nc/ds010.1.20121200.20130331.nc" 
+file2014 <- "./data/ALPI_nc/ds010.1.20131200.20140331.nc" 
+file2015 <- "./data/ALPI_nc/ds010.1.20141200.20150331.nc" 
 ############################################################  
 # This is a vector containing all the years 
 year <- c(2011,2012,2013,2014,2015)  
