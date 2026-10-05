@@ -89,3 +89,39 @@ occ_esp %>%
   write_csv("./outputs/chla_concentration.csv")
 
 
+## new indicator
+occ_esp <- read.csv(paste0(data_dir, "AMJJ_Chlorophylla_Concentration_Tanner_OCCCI.csv")) %>%
+           rename(mean_chla = DATA_VALUE,
+                  year = YEAR) %>%
+           select(-INDICATOR_NAME) %>%
+           mutate(DATASET = "AMJ")
+
+chla <- read.csv("./outputs/chla_concentration.csv") %>%
+        mutate(DATASET = "AMJJ")
+
+ggplot(occ_esp, aes(x = year, y = mean_chla)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(aes(yintercept = mean(mean_chla, na.rm = TRUE)), linetype = 5) +
+  geom_hline(aes(yintercept = mean(mean_chla, na.rm = TRUE) - sd(mean_chla, na.rm = TRUE)), color = "green4") +
+  geom_hline(aes(yintercept = mean(mean_chla, na.rm = TRUE) + sd(mean_chla, na.rm = TRUE)), color = "green4") +
+  labs(x = "Year", y = "Mean Chlorophyll-a\nConcentration (µg/L)") +
+  xlim(min(years), max(years)) +
+  theme_bw() 
+ggsave(paste0(fig_dir, "chla_concentration2.png"), height = 2, width = 6)
+
+
+plot_dat <- rbind(chla, occ_esp)
+
+ggplot(plot_dat, aes(x = year, y = mean_chla, color = DATASET)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(aes(yintercept = mean(mean_chla, na.rm = TRUE)), linetype = 5) +
+  geom_hline(aes(yintercept = mean(mean_chla, na.rm = TRUE) - sd(mean_chla, na.rm = TRUE)), color = "green4") +
+  geom_hline(aes(yintercept = mean(mean_chla, na.rm = TRUE) + sd(mean_chla, na.rm = TRUE)), color = "green4") +
+  labs(x = "Year", y = "Mean Chlorophyll-a\nConcentration (µg/L)") +
+  xlim(min(years), max(years)) +
+  theme_bw() 
+ggsave(paste0(fig_dir, "chla_concentration2.png"), height = 2, width = 6)
+
+
