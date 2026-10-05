@@ -24,13 +24,13 @@ data_dir <- "Y:/KOD_Research/Hennessey/Tanner_ESP/data/"
 # start_time <- Sys.time()
 dat <- RODBC::sqlQuery(channel = channel, 
                        query = paste0("SELECT
-                                       hh.CRUISEJOIN,
-                                       hh.CRUISE,
-                                       hh.YEAR,
-                                       --hh.SURVEY_DEFINITION_ID,
-                                       hh.SURVEY,
-                                       hh.VESSEL_ID,
-                                       hh.VESSEL_NAME,
+                                       rr.CRUISEJOIN,
+                                       rr.CRUISE,
+                                       rr.YEAR,
+                                       rr.SURVEY_DEFINITION_ID,
+                                       -- hh.SURVEY,
+                                       rr.VESSEL_ID,
+                                       rr.VESSEL_NAME,
                                        hh.HAULJOIN,
                                        hh.HAUL,
                                        hh.STATION,
@@ -38,7 +38,7 @@ dat <- RODBC::sqlQuery(channel = channel,
                                        hh.LATITUDE_DD_END,
                                        hh.LONGITUDE_DD_START,
                                        hh.LONGITUDE_DD_END,
-                                       hh.AREA_SWEPT_KM2,
+                                       cc.AREA_SWEPT_KM2,
                                        cc.SPECIES_CODE,
                                        tt.SCIENTIFIC_NAME,
                                        tt.COMMON_NAME,
@@ -46,12 +46,15 @@ dat <- RODBC::sqlQuery(channel = channel,
                                        cc.COUNT,
                                        cc.CPUE_KGKM2,
                                        cc.CPUE_NOKM2
-                                       FROM GAP_PRODUCTS.FOSS_HAUL hh
-                                       LEFT JOIN GAP_PRODUCTS.FOSS_CATCH cc
+                                       FROM GAP_PRODUCTS.CRUISE rr
+                                       LEFT JOIN GAP_PRODUCTS.HAUL hh
+                                       ON rr.CRUISEJOIN = hh.CRUISEJOIN
+                                       LEFT JOIN GAP_PRODUCTS.CPUE cc
                                        ON hh.HAULJOIN = cc.HAULJOIN
                                        LEFT JOIN GAP_PRODUCTS.FOSS_SPECIES tt
                                        ON cc.SPECIES_CODE = tt.SPECIES_CODE
                                        WHERE SURVEY_DEFINITION_ID IN (143, 98);")) # 143 NBS, 98 EBS
+                                       
 # end_time <- Sys.time()
 # cat(paste("Time Elapsed:", round(end_time - start_time, 2), 
 #           units(end_time - start_time), "\n\n"))
@@ -61,8 +64,8 @@ dat <- RODBC::sqlQuery(channel = channel,
 #*        NUMCPUE = CPUE_NOKM2/100)
 #* **NEED TO CHECK what units we want -- crab CPUE is in per NMI2 not KM2...
 
-
-write.csv(dat, paste0(data_dir, "gf_cpue_timeseries.csv"), row.names = FALSE)
+saveRDS(dat, paste0(data_dir, "gf_cpue_timeseries.rds"))
+# write.csv(dat, paste0(data_dir, "gf_cpue_timeseries.csv"), row.names = FALSE)
 
 
 
