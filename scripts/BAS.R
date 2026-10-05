@@ -108,50 +108,50 @@ dat_tanner %>%
 
 
 # Set up lags
-variables <- tibble(indicator = c("summer_st","wind_along_shelf","wind_cross_shelf","NPI","mean_AL","ice_avg",
-                                  "mean_chla","temp_occ","total_pred","pcod_consumption","bcd_prevalence",  
+variables <- tibble(indicator = c("summer_st","wind_along_shelf","wind_cross_shelf","NPI","mean_AL",
+                                  "ice_avg","ice_retreat","mean_chla","temp_occ","total_pred","pcod_consumption","bcd_prevalence",  
                                   "total_invert","female_sam","clutch_fullness",
                                   "male_sam","matmale_d95","matmale_cod_lon"), 
-                    type = c(rep("larval", 5), rep("juvenile", 7), rep("adult", 5)), 
-                    response = c(rep("recruitment", 12), rep(NA, 5)),
-                    lag = c(5,5,5,5,5,2, 3,1,3,3,3,2, 7,7, rep(NA, 3))) %>%
+                    type = c(rep("larval", 5), rep("juvenile", 8), rep("adult", 5)), 
+                    response = c(rep("recruitment", 13), rep(NA, 5)),
+                    lag = c(5,5,5,5,5, 1,1,2,1, 3,3,3,2, 7,7, rep(NA, 3))) %>%
             filter(!indicator %in% c("female_sam","clutch_fullness",
                                     "male_sam","matmale_d95","matmale_cod_lon"))
 
 # Set iteration identifier for saving outputs
-iter <- "sept14"
+iter <- "sept26"
 
 
-## Assign lags for indicators - see metadata file in repo for rationales for lags
-dat_tanner_bas <- dat_tanner %>%
-                  select(-imm_survey_abund) %>%
-                  pivot_longer(c(2:ncol(.)), names_to = "indicator", values_to = "value") %>%
-                  filter(year >= 1982,
-                         indicator %in% variables$indicator) %>%
-                  left_join(variables) %>%
-                  filter(!is.na(lag)) %>%
-                  group_by(indicator) %>%
-                  nest() %>%
-                  mutate(data = purrr::map(data, function(data){
-                    n_lag <- as.numeric(unique(data$lag))
-                    x <- data %>%
-                         mutate(lagged = lag(value, n = n_lag, order_by = year))
-                    return(x)})) %>%
-                  unnest(cols = c(data)) %>%
-                  select(indicator, year, lagged) %>%
-                  pivot_wider(names_from = "indicator", values_from = "lagged") %>%
-                  left_join(response)
-
-# Plot again and look at temporal coverage with lags incorporated
-# with so many large ELH lags, we're going to lose early years in the timeseries
-dat_tanner_bas %>%
-  select(-imm_survey_abund) %>%
-  pivot_longer(c(2:ncol(.)), names_to = "indicator", values_to = "value") %>%
-  ggplot(aes(x = year, y = indicator, size = value)) +
-  geom_point(na.rm = T) +
-  theme_bw()
-
-
+# ## Assign lags for indicators - see metadata file in repo for rationales for lags
+# dat_tanner_bas <- dat_tanner %>%
+#                   select(-imm_survey_abund) %>%
+#                   pivot_longer(c(2:ncol(.)), names_to = "indicator", values_to = "value") %>%
+#                   filter(year >= 1982,
+#                          indicator %in% variables$indicator) %>%
+#                   left_join(variables) %>%
+#                   filter(!is.na(lag)) %>%
+#                   group_by(indicator) %>%
+#                   nest() %>%
+#                   mutate(data = purrr::map(data, function(data){
+#                     n_lag <- as.numeric(unique(data$lag))
+#                     x <- data %>%
+#                          mutate(lagged = lag(value, n = n_lag, order_by = year))
+#                     return(x)})) %>%
+#                   unnest(cols = c(data)) %>%
+#                   select(indicator, year, lagged) %>%
+#                   pivot_wider(names_from = "indicator", values_from = "lagged") %>%
+#                   left_join(response)
+# 
+# # Plot again and look at temporal coverage with lags incorporated
+# # with so many large ELH lags, we're going to lose early years in the timeseries
+# dat_tanner_bas %>%
+#   select(-imm_survey_abund) %>%
+#   pivot_longer(c(2:ncol(.)), names_to = "indicator", values_to = "value") %>%
+#   ggplot(aes(x = year, y = indicator, size = value)) +
+#   geom_point(na.rm = T) +
+#   theme_bw()
+# 
+# 
 # # Plot timeseries with lagged covariates
 # dat_tanner_bas %>%
 #   pivot_longer(c(2:ncol(.)), names_to = "indicator", values_to = "value") %>%
@@ -172,6 +172,7 @@ dat_tanner_bas %>%
 # hist(dat_tanner_bas$pcod_consumption) # skew left
 # hist(dat_tanner_bas$summer_st)
 # hist(dat_tanner_bas$ice_avg)
+# hist(dat_tanner_bas$ice_retreat)
 # hist(dat_tanner_bas$temp_occ)
 # hist(dat_tanner_bas$total_invert)
 # hist(dat_tanner_bas$total_pred)
@@ -212,9 +213,10 @@ dat_tanner_bas %>%
 ## Final data shaping ----------------------------------------------------------
 dat_tanner_bas <- dat_tanner %>%
                   # remove unused indicators
-                  select(-imm_survey_abund, -mean_chla, -mean_AL, -NPI, -wind_cross_shelf, -ice_avg) %>% 
+                  select(-imm_survey_abund, -mean_chla, -mean_AL, -NPI, 
+                         -wind_cross_shelf, -ice_avg, -ice_retreat) %>% 
                   pivot_longer(c(2:ncol(.)), names_to = "indicator", values_to = "value") %>%
-                  filter(year >= 2000, 
+                  filter(#year < 2025, 
                          indicator %in% variables$indicator) %>%
                   left_join(variables) %>%
                   filter(!is.na(lag)) %>%
@@ -232,6 +234,14 @@ dat_tanner_bas <- dat_tanner %>%
                   # add log recruitment
                   mutate(ln_abund = log(imm_survey_abund))
 
+# Plot again and look at temporal coverage with lags incorporated
+# with so many large ELH lags, we're going to lose early years in the timeseries
+dat_tanner_bas %>%
+  select(-imm_survey_abund) %>%
+  pivot_longer(c(2:ncol(.)), names_to = "indicator", values_to = "value") %>%
+  ggplot(aes(x = year, y = indicator, size = value)) +
+  geom_point(na.rm = T) +
+  theme_bw()
 
 # Determine covariates
 covars <- names(dat_tanner_bas %>% select(-year, -imm_survey_abund, -ln_abund))
@@ -268,14 +278,14 @@ dat.fit.list <- dat.fit %>% gather(key = 'var', value = 'value', -year)
 covar.mtx <- dat.fit %>% 
              select(-year, -ln_abund)
 
-corr.mtx <- cor(covar.mtx, use = "na.or.complete")
-png(paste0(fig_dir, "BAS_covariate_correlation_", iter, ".png"), 
-    height = 12, width = 12, units = 'in', res = 300)
-corrplot::corrplot(corr.mtx, method = "number")
-dev.off()
+corr.mtx <- cor(covar.mtx, use = "pairwise.complete.obs")
+# png(paste0(fig_dir, "BAS_covariate_correlation_", iter, ".png"), 
+#     height = 12, width = 12, units = 'in', res = 300)
+# corrplot::corrplot(corr.mtx, method = "number")
+# dev.off()
 
 # Check number of pairs with correlation >0.6
-sum((corr.mtx > 0.6 & corr.mtx < 1.0) & (corr.mtx < -0.6))
+sum((corr.mtx > 0.6 & corr.mtx < 1.0) | (corr.mtx < -0.6))/2
 
 
 
@@ -288,7 +298,8 @@ z.ts.plot <- dat.fit %>%
                                       levels = c("wind_along_shelf", "summer_st",
                                                  "temp_occ","bcd_prevalence",
                                                  "total_pred","pcod_consumption", 
-                                                 "total_invert")))
+                                                 "total_invert"))) %>%
+             filter(year >= 1980)
 
 facet_names <- list("wind_along_shelf" = "Along-shelf wind", 
                     "summer_st" = "Summer surface temperature",
@@ -308,6 +319,7 @@ ggplot() +
                     select(year, ln_abund), 
             aes(year, ln_abund), color = "grey50", linetype = 6) +
   labs(y = "Value", x = "") +
+  lims(x = c(1980, 2025)) +
   facet_wrap(~ indicator, scales = "free_x", labeller = facet_labeller, ncol = 2) + 
   theme_bw() +
   theme(panel.border = element_rect(color = "black", fill = NA),
@@ -326,6 +338,7 @@ dat.temp <- dat.fit %>%
                    # "ALBSA" = mean_AL, #Aleutian Low - Beaufort Sea Anticyclone
                    # "NPI" = NPI,
                    # "Sea Ice Extent" = ice_avg,
+                   # "Sea Ice Retreat" = ice_retreat,
                    "Along-Shelf Wind" = wind_along_shelf,
                    # "Cross-Shelf Wind" = wind_cross_shelf,
                    # "Chlorophyll-a Concentration" = mean_chla,
@@ -337,7 +350,7 @@ dat.temp <- dat.fit %>%
                    # "Clutch Failure" = clutch_fullness,
                    "Pacific Cod Consumption" = pcod_consumption)
 
-# Bayesian model melection
+# Bayesian model selection
 bas.lm <-  bas.lm(ln_abund ~ ., 
                   data = dat.temp,
                   modelprior = uniform(), 
@@ -376,13 +389,13 @@ ci.dat <- calc_bioabund(crab_data = tanner,
                  ln_ci = ABUNDANCE_CI)
 
 plot_dat <- na.omit(dat.fit) %>% # omit NAs
-            left_join(ci.dat) %>%
+            # left_join(ci.dat) %>%
             add_column(bas_pred = predict(bas.lm, estimator = "BMA")$Ybma[,1])
 
 p1 <- ggplot(data = plot_dat, aes(x = ln_abund, y = bas_pred)) +
-      geom_point(colour = "red", size = 3) +
+      geom_point(fill = "coral1", colour = "black", shape = 21, size = 2) +
       geom_abline(slope = 1, intercept = 0, 
-                  colour = "blue", size = 1) +
+                  colour = "lightslateblue", size = 1) +
       labs(x = "Observed ln(Recruitment)", y = "Predicted ln(Recruitment)") +
       theme_bw()
 
@@ -395,22 +408,26 @@ plot_dat2 <- plot_dat %>%
                     model = factor(model, levels = c("ln_abund", "bas_pred")))
 
 p2 <- ggplot(data = plot_dat2, aes(x = year, y = value, group = model)) +
+      geom_line(aes(colour = model, size = model, alpha = model)) +
       geom_point(data = plot_dat2 %>% filter(model == "ln_abund"),
-                 aes(colour = model), size = 3) +
-      geom_line(aes(colour = model, size = model)) +
+                 aes(fill = model), colour = "black", size = 2, shape = 21, alpha = 0.8,
+                 show.legend = FALSE) +
       # geom_ribbon(aes(x = year, ymin = value - ln_ci, ymax = value + ln_ci), 
       #             alpha = 0.1, fill = "red") +
-      scale_color_manual(values = c("red", "blue"), 
+      scale_color_manual(values = c("coral1", "lightslateblue"), 
                          labels = c("Observed", "Predicted")) +
       scale_size_manual(values = c(1, 1.5), 
                         labels = c("Observed", "Predicted")) +
+  scale_alpha_manual(values = c(1, 0.8), 
+                    labels = c("Observed", "Predicted")) +
       labs(x = "Year", y = "ln(Recruitment)") +
       theme_bw() +
-      theme(legend.position = c(0.25, 0.9),
+      theme(legend.position = c(0.15, 0.9),
             legend.box = "vertical",
             legend.title = element_blank())
+p1+p2
   
-ggsave(file = paste0(fig_dir, "BAS_model_fit_", iter, ".png"), 
+ggsave(file = paste0(fig_dir, "BAS_model_fit", iter, ".png"), 
        p1 + p2, height = 5, width = 10)
 
 
